@@ -153,7 +153,7 @@ int main(argc, argv)
  */
     while (fgets(In_buf, sizeof In_buf, stdin) != (char *)NULL){
 
-        strncpy(In_buf_rvj, In_buf, sizeof In_buf_rvj);
+        strncpy(In_buf_rvj, In_buf, (sizeof In_buf_rvj) - 1);
 
         get_func_rec(In_buf);
         for (i = 0; Tbl_rec[i].recname != NULL; i++){

@@ -406,7 +406,7 @@ int main(argc, argv)
                    strncmp(In_buf, "abort_tran", strlen("abort_tran")) != 0 &&
                    strncmp(In_buf, "ABORT_TRAN", strlen("ABORT_TRAN")) != 0){
 
-                strncpy(In_buf_rvj, In_buf, sizeof In_buf_rvj);
+                strncpy(In_buf_rvj, In_buf, (sizeof In_buf_rvj) - 1);
 
                 get_func_rec(In_buf);
                 if (strcmp(FuncName, "ROLLBACK") == 0 ||

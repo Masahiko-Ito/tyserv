@@ -88,13 +88,19 @@ for ($i = 0; $rec[$i]; $i++){
             $old_key = $key[$i];
             printf("    if (strcmp(\"%-s\", KeyName) == 0){\n", $key[$i]);
             printf("        get_keyvalue(buf);\n");
-            printf("        strncpy(%-s_%-s.%-s, %-s, sizeof %-s_%-s.%-s);\n",
+            printf("        %-s_%-s.%-s[(sizeof %-s_%-s.%-s) - 1] = '\\0';\n",
+                   $rec[$i], $key[$i], $item[$i],
+                   $rec[$i], $key[$i], $item[$i]);
+            printf("        strncpy(%-s_%-s.%-s, %-s, (sizeof %-s_%-s.%-s) - 1);\n",
                    $rec[$i], $key[$i], $item[$i], "KeyValue",
                    $rec[$i], $key[$i], $item[$i]);
         }else{
             if ($key[$i] eq $old_key){
                 printf("        get_keyvalue(buf);\n");
-                printf("        strncpy(%-s_%-s.%-s, %-s, sizeof %-s_%-s.%-s);\n",
+                printf("        %-s_%-s.%-s[(sizeof %-s_%-s.%-s) - 1] = '\\0';\n",
+                       $rec[$i], $key[$i], $item[$i],
+                       $rec[$i], $key[$i], $item[$i]);
+                printf("        strncpy(%-s_%-s.%-s, %-s, (sizeof %-s_%-s.%-s) - 1);\n",
                        $rec[$i], $key[$i], $item[$i], "KeyValue",
                        $rec[$i], $key[$i], $item[$i]);
             }else{
@@ -106,7 +112,10 @@ for ($i = 0; $rec[$i]; $i++){
                 $old_key = $key[$i];
                 printf("    }else if (strcmp(\"%-s\", KeyName) == 0){\n", $key[$i]);
                 printf("        get_keyvalue(buf);\n");
-                printf("        strncpy(%-s_%-s.%-s, %-s, sizeof %-s_%-s.%-s);\n",
+                printf("        %-s_%-s.%-s[(sizeof %-s_%-s.%-s) - 1] = '\\0';\n",
+                       $rec[$i], $key[$i], $item[$i],
+                       $rec[$i], $key[$i], $item[$i]);
+                printf("        strncpy(%-s_%-s.%-s, %-s, (sizeof %-s_%-s.%-s) - 1);\n",
                        $rec[$i], $key[$i], $item[$i], "KeyValue",
                        $rec[$i], $key[$i], $item[$i]);
             }
@@ -222,11 +231,15 @@ for ($i = 0; $rec[$i]; $i++){
         if ($old_item eq ""){
             $old_item = $item[$i];
             printf("        if (strcmp(\"%-s\", ItemName) == 0){\n", $item[$i]);
-            printf("            strncpy(%-s.%-s, ItemValue, sizeof %-s.%-s);\n", 
+            printf("            %-s.%-s[(sizeof %-s.%-s) - 1] = '\\0';\n",
+                   $rec[$i], $item[$i], $rec[$i], $item[$i]);
+            printf("            strncpy(%-s.%-s, ItemValue, (sizeof %-s.%-s) - 1);\n", 
                    $rec[$i], $item[$i], $rec[$i], $item[$i]);
         }else{
             printf("        }else if (strcmp(\"%-s\", ItemName) == 0){\n", $item[$i]);
-            printf("            strncpy(%-s.%-s, ItemValue, sizeof %-s.%-s);\n", 
+            printf("            %-s.%-s[(sizeof %-s.%-s) - 1] = '\\0';\n",
+                   $rec[$i], $item[$i], $rec[$i], $item[$i]);
+            printf("            strncpy(%-s.%-s, ItemValue, (sizeof %-s.%-s) - 1);\n", 
                    $rec[$i], $item[$i], $rec[$i], $item[$i]);
         }
     }
@@ -339,12 +352,16 @@ for ($i = 0; $rec[$i]; $i++){
         if ($old_key eq ""){
             $old_key = $key[$i];
             printf("    get_keyvalue(buf);\n");
-            printf("    strncpy(%-s_%-s.%-s, KeyValue, sizeof %-s_%-s.%-s);\n",
+            printf("    %-s_%-s.%-s[(sizeof %-s_%-s.%-s) - 1] = '\\0';\n",
+                   $rec[$i], $key[$i], $item[$i], $rec[$i], $key[$i], $item[$i]);
+            printf("    strncpy(%-s_%-s.%-s, KeyValue, (sizeof %-s_%-s.%-s) - 1);\n",
                    $rec[$i], $key[$i], $item[$i], $rec[$i], $key[$i], $item[$i]);
         }else{
             if ($key[$i] eq $old_key){
                 printf("    get_keyvalue(buf);\n");
-                printf("    strncpy(%-s_%-s.%-s, KeyValue, sizeof %-s_%-s.%-s);\n",
+                printf("    %-s_%-s.%-s[(sizeof %-s_%-s.%-s) - 1] = '\\0';\n",
+                       $rec[$i], $key[$i], $item[$i], $rec[$i], $key[$i], $item[$i]);
+                printf("    strncpy(%-s_%-s.%-s, KeyValue, (sizeof %-s_%-s.%-s) - 1);\n",
                        $rec[$i], $key[$i], $item[$i], $rec[$i], $key[$i], $item[$i]);
             }
         }
@@ -419,11 +436,15 @@ for ($i = 0; $rec[$i]; $i++){
             $old_item = $item[$i];
             printf("            if (strcmp(\"%-s\", ItemName) == 0){\n", $item[$i]);
             printf("                sprintf(Out_buf_rbj, \"%-s\\t%-s=%-s\", Out_buf_rbj, ItemName, %-s.%-s);\n", "%-s", "%-s", "%-s", $rec[$i], $item[$i]);
-            printf("                strncpy(%-s.%-s, ItemValue, sizeof %-s.%-s);\n", $rec[$i], $item[$i], $rec[$i], $item[$i]);
+            printf("                %-s.%-s[(sizeof %-s.%-s) - 1] = '\\0';\n",
+                   $rec[$i], $item[$i], $rec[$i], $item[$i]);
+            printf("                strncpy(%-s.%-s, ItemValue, (sizeof %-s.%-s) - 1);\n", $rec[$i], $item[$i], $rec[$i], $item[$i]);
         }else{
             printf("            }else if (strcmp(\"%-s\", ItemName) == 0){\n", $item[$i]);
             printf("                sprintf(Out_buf_rbj, \"%-s\\t%-s=%-s\", Out_buf_rbj, ItemName, %-s.%-s);\n", "%-s", "%-s", "%-s", $rec[$i], $item[$i]);
-            printf("                strncpy(%-s.%-s, ItemValue, sizeof %-s.%-s);\n", $rec[$i], $item[$i], $rec[$i], $item[$i]);
+            printf("                %-s.%-s[(sizeof %-s.%-s) - 1] = '\\0';\n",
+                   $rec[$i], $item[$i], $rec[$i], $item[$i]);
+            printf("                strncpy(%-s.%-s, ItemValue, (sizeof %-s.%-s) - 1);\n", $rec[$i], $item[$i], $rec[$i], $item[$i]);
         }
     }
 }
@@ -507,12 +528,16 @@ for ($i = 0; $rec[$i]; $i++){
         if ($old_key eq ""){
             $old_key = $key[$i];
             printf("    get_keyvalue(buf);\n");
-            printf("    strncpy(%-s_%-s.%-s, KeyValue, sizeof %-s_%-s.%-s);\n",
+            printf("    %-s_%-s.%-s[(sizeof %-s_%-s.%-s) - 1] = '\\0';\n",
+                   $rec[$i], $key[$i], $item[$i], $rec[$i], $key[$i], $item[$i]);
+            printf("    strncpy(%-s_%-s.%-s, KeyValue, (sizeof %-s_%-s.%-s) - 1);\n",
                    $rec[$i], $key[$i], $item[$i], $rec[$i], $key[$i], $item[$i]);
         }else{
             if ($key[$i] eq $old_key){
                 printf("    get_keyvalue(buf);\n");
-                printf("    strncpy(%-s_%-s.%-s, KeyValue, sizeof %-s_%-s.%-s);\n",
+                printf("    %-s_%-s.%-s[(sizeof %-s_%-s.%-s) - 1] = '\\0';\n",
+                       $rec[$i], $key[$i], $item[$i], $rec[$i], $key[$i], $item[$i]);
+                printf("    strncpy(%-s_%-s.%-s, KeyValue, (sizeof %-s_%-s.%-s) - 1);\n",
                        $rec[$i], $key[$i], $item[$i], $rec[$i], $key[$i], $item[$i]);
             }
         }

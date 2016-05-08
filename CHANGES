@@ -1,2 +1,4 @@
 1.0  : 2002.07.01 正式版(1.0)リリース
 2.0  : 2003.02.01 マルチサーバ版
+2.1  : 2003.02.06 tyrecover.sh, tyrollback.sh オプション変更
+                  tyserv, tyrecover, tysearch buffer overfllow fix

@@ -1,17 +1,22 @@
 #! /bin/sh
 #
-if [ X"$1" = "X-h" -o X"$1" = "X--help" ]
-then
-    echo "usage : `basename $0` [-d tyserv_rundir] [-stdin]"
-    echo " rollback database from rollback journal"
-    exit 1
-fi
-#
 DEF_TYSERV_DIR=/home/tyserv/tyserv
 DEF_TYSERV_RUNDIR=/home/tyserv/rundir1
 TYSERV_RUNDIR=${DEF_TYSERV_RUNDIR}
 #
+if [ X"$1" = "X-h" -o X"$1" = "X--help" ]
+then
+    echo "usage : `basename $0` [-d tyserv_rundir] [-s|--stdin] [-v|--verbose]"
+    echo " rollback database from rollback journal"
+    echo " option : -d DIRECTORY    DIRECTORY has rollback journal and tyserv.conf"
+    echo "                          (default ${TYSERV_RUNDIR})"
+    echo "          -s, --stdin     read rollback journal from stdin"
+    echo "          -v, --verbose   verbose mode"
+    exit 1
+fi
+#
 STDIN_SW=""
+VERBOSE_SW=""
 #
 while [ "$#" != "0" ]
 do
@@ -20,41 +25,59 @@ do
         shift
         TYSERV_RUNDIR=$1
         ;;
-    -stdin )
+    -s|--stdin )
         STDIN_SW=$1
+        ;;
+    -v|--verbose )
+        VERBOSE_SW=$1
         ;;
     esac
     shift
 done
 #
-TAC=/usr/bin/tac
-#
-if [ "X${STDIN_SW}" = "X-stdin" ]
+if [ "X${STDIN_SW}" = "X" ]
 then
-    if [ -x ${TAC} ]
+    RBJ=${TYSERV_RUNDIR}/journal/rbj.dat
+    if [ ! -r ${RBJ} ]
     then
-        ${TAC} |\
-        ${DEF_TYSERV_DIR}/bin/tyrecover 1 ${TYSERV_RUNDIR}
-#                                       ^ ^tyserv directory
-#                                       ^when 1, output recovery journal
-        exit 0
-    else
+        if [ "X${VERBOSE_SW}" != "X" ]
+        then
+            echo "tyrollback failure. rollback jounal(${RBJ}) can not read."
+        fi
         exit 1
     fi
 else
-    if [ -r ${TYSERV_RUNDIR}/journal/rbj.dat ]
+    RBJ=""
+fi
+#
+if [ "X${VERBOSE_SW}" != "X" ]
+then
+    echo "tyrollback start. rollback jounal=(${RBJ}), run directory=(${TYSERV_RUNDIR})."
+fi
+#
+TAC=/usr/bin/tac
+#
+if [ -x ${TAC} ]
+then
+    ${TAC} ${RBJ} |\
+    ${DEF_TYSERV_DIR}/bin/tyrecover 1 ${TYSERV_RUNDIR}
+#                                   ^ ^tyserv directory
+#                                   ^when 1, output recovery journal
+    STAT=$?
+    if [ "X${VERBOSE_SW}" != "X" ]
     then
-        if [ -x ${TAC} ]
+        if [ "X${STAT}" = "X0" ]
         then
-            ${TAC} ${TYSERV_RUNDIR}/journal/rbj.dat |\
-            ${DEF_TYSERV_DIR}/bin/tyrecover 1 ${TYSERV_RUNDIR}
-#                                           ^ ^tyserv directory
-#                                           ^when 1, output recovery journal
-            exit 0
+            echo "tyrollback success."
         else
-            exit 1
+            echo "tyrollback failure. status=${STAT}."
         fi
-    else
-        exit 1
     fi
+    exit ${STAT}
+else
+    if [ "X${VERBOSE_SW}" != "X" ]
+    then
+        echo "tyrollback failure. ${TAC} can not be executed"
+    fi
+    exit 1
 fi

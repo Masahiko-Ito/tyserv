@@ -296,9 +296,9 @@ int DB_open()
      * set dbd dir
      */
     if ((p_env = (char *)getenv("TYPHOON_DIR")) == NULL){
-        strncpy(Dbd_dir, DEF_DBD_DIR, sizeof Dbd_dir);
+        strncpy(Dbd_dir, DEF_DBD_DIR, (sizeof Dbd_dir) - 1);
     }else{
-        strncpy(Dbd_dir, p_env, sizeof Dbd_dir);
+        strncpy(Dbd_dir, p_env, (sizeof Dbd_dir) - 1);
         strncat(Dbd_dir, "/dbd", (sizeof Dbd_dir) - strlen(Dbd_dir) - 1);
     }
     d_dbdpath(Dbd_dir);
@@ -307,9 +307,9 @@ int DB_open()
      * set data dir
      */
     if ((p_env = (char *)getenv("TYPHOON_DIR")) == NULL){
-        strncpy(Data_dir, DEF_DATA_DIR, sizeof Data_dir);
+        strncpy(Data_dir, DEF_DATA_DIR, (sizeof Data_dir) - 1);
     }else{
-        strncpy(Data_dir, p_env, sizeof Data_dir);
+        strncpy(Data_dir, p_env, (sizeof Data_dir) - 1);
         strncat(Data_dir, "/data", (sizeof Data_dir) - strlen(Data_dir) - 1);
     }
     d_dbfpath(Data_dir);

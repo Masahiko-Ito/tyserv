@@ -1,4 +1,4 @@
-tyserv-2.0 -- database server which use typhoon RDBMS as database engine
+tyserv-2.1 -- database server which use typhoon RDBMS as database engine
 Copyright (C) 2003  Masahiko Ito
 
 These programs is free software; you can redistribute it and/or modify
@@ -59,10 +59,12 @@ C-ISAM」等の言葉に反応してしまうそこのあなたにこそ「tyserv」は有るの
 ダウンロード
 ============
 
-http://myh.no-ip.org/~tyserv/tyserv-2.0.tar.gz
+http://myh.no-ip.org/~tyserv/tyserv-2.1.tar.gz
 
   1. 排他制御の粒度を細かくするためのマルチサーバ構成に対応
   2. tysearch(検索コマンド)サポート
+  3. tyrecover.sh, tyrollback.sh オプション変更
+  4. tyserv, tyrecover, tysearch バッファオーバフロー修正
 
 インストール
 ============
@@ -70,11 +72,11 @@ http://myh.no-ip.org/~tyserv/tyserv-2.0.tar.gz
  1. システムにユーザ tyserv を追加する
  2. ユーザ tyserv 用にホームディレクトリ /home/tyserv を作成する
  3. tyserv でログインする
- 4. tyserv-2.0 を展開する
-     □ $ tar xvzf tyserv-2.0.tar.gz
-     □ $ ln -s tyserv-2.0/typhoon .
-     □ $ ln -s tyserv-2.0/tyserv .
-     □ $ ln -s tyserv-2.0/rundir1 .
+ 4. tyserv-2.1 を展開する
+     □ $ tar xvzf tyserv-2.1.tar.gz
+     □ $ ln -s tyserv-2.1/typhoon .
+     □ $ ln -s tyserv-2.1/tyserv .
+     □ $ ln -s tyserv-2.1/rundir1 .
  5. PATH に ${HOME}/typhoon/bin, ${HOME}/tyserv/bin を追加する
         ex. (/home/tyserv/.profile etc)
      □ PATH="${PATH}:${HOME}/typhoon/bin"
@@ -85,7 +87,7 @@ http://myh.no-ip.org/~tyserv/tyserv-2.0.tar.gz
      □ typhoon-1.11.0.tar.gz を取得する
         http://users.footprints.net/~kaz/typhoon.html
      □ $ tar xvzf typhoon-1.11.0.tar.gz
-     □ $ cd typhoon-1.11.0; patch -p1 <../tyserv-2.0/
+     □ $ cd typhoon-1.11.0; patch -p1 <../tyserv-2.1/
         typhoon-1.11.0.patch
      □ $ ./configure; make
      □ $ su
@@ -612,13 +614,14 @@ tyserv 再生成
 データベース復旧ツール(tyrecover.sh)
 ====================================
 
- ・ usage : tyrecover.sh [-d 実行時ディレクトリ] [-stdin]
+ ・ usage : tyrecover.sh [-d 実行時ディレクトリ] [-s|--stdin] [-v|--verbose]
    
      □ -d 実行時ディレクトリ :
         実行時ディレクトリ/journal/rvj.dat からデータベースの復旧を行
         う。実行時ディレクトリ未指定時は ${HOME}/rundir1/journal/
         rvj.datから復旧を行う。
-     □ -stdin : リカバリジャーナルを標準入力から読む
+     □ -s, --stdin : リカバリジャーナルを標準入力から読む
+     □ -v, --verbose : おしゃべりモード
  ・ 皆さんはディスクのバックアップは取っておられますか？。取ってない
     という方も大勢おられると思います。また取っているとしても毎日取る
     なんて方は極まれなんではないでしょうか。
@@ -698,7 +701,7 @@ tyservは排他の単位がデータベースなので、排他モードのトランザクション
 ることで共有そのものを避ける方法で排他制御を行っている(というか行わず
 にすましてるというか...)為にしかたのないことです(^^;。
 
-そこでtyserv-2.0ではデータベースに含まれるテーブルを幾つかのグループ
+そこでtyserv-2.1ではデータベースに含まれるテーブルを幾つかのグループ
 に分けて、そのグループ毎に別々のサーバを起動することで排他の粒度を細
 かくできるように拡張を行いました。
 
@@ -751,7 +754,7 @@ tyservは排他の単位がデータベースなので、排他モードのトランザクション
      □ ty_rollbacks(@tran_param)
  ・ サンプルスクリプトの動かし方
      □ $ cd /home/tyserv
-     □ $ ln -s tyserv-2.0/rundir2 .
+     □ $ ln -s tyserv-2.1/rundir2 .
      □ $ /etc/rc.d/rc.tyserv -d /home/tyserv/rundir2
      □ $ cd /home/tyserv/tyserv/sample
      □ $ ./sample3.pl localhost 20000 update 20001 update
