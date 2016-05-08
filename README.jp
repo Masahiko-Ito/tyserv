@@ -994,7 +994,7 @@ tytran.sh(トランザクションバッチ実行ツール)実行例
 本コマンドはユーザ tyserv 以外でも実行できます。
 
 $ tytran.sh -h  <-- ヘルプの表示
-usage : tytran.sh [-s server|--server server] [-p port|--port port] [-n|-ngexit] [-v|--verbose]
+usage : tytran.sh [-s server|--server server] [-p port|--port port] [-n|--ngexit] [-v|--verbose]
  execute transaction in batch mode
  option : -s server       connect to server. default localhost.
           -p port         connect to port. default 20000.

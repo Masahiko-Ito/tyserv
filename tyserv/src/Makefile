@@ -16,7 +16,7 @@ LDFLAGS		= -L/usr/local/lib
 # for FreeBSD
 #LIBS		= -ltyphoon -lcompat -lwrap
 # for Linux
-LIBS		= -ltyphoon -lwrap
+LIBS		= -ltyphoon -lwrap -lnsl
 INSTALL_DIR	= $(TYSERV_DIR)/bin
 
 all:	tyserv tyrecover tysearch

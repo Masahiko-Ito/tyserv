@@ -23,3 +23,5 @@
                   tyrollback.shのTACを自動で設定するように修正
                   strncpy(),strncat()でNULLターミネートしてない可能性が有った箇所を修正
                   トランザクションをバッチで実行するコマンド tytran.sh を追加
+2.5  : 2004.??.?? README.jpのtytran.sh説明誤り修正.
+                  yp_get_default_domain()解決のためにtyserv/src/MakefileのLIBSに-lnslを追加.
