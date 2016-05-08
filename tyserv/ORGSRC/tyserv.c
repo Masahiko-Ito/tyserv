@@ -2,7 +2,7 @@
  * __MESSAGE__
  *
  * tyhpoon database server program by M.Ito
- * Ver. 1.0    2002.07.01
+ *
  */
 #include <stdio.h>
 #include <fcntl.h>
@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include <tcpd.h>
 #include <syslog.h>
@@ -59,6 +60,7 @@ int  Socket_wait_queue;
 char Dbd_dir[PATH_LEN];
 char Data_dir[PATH_LEN];
 char Rvj_name[PATH_LEN];
+char Rvj_name_swap[PATH_LEN];
 char Rbj_name[PATH_LEN];
 char Passwd_name[PATH_LEN];
 char Daemon_name[PATH_LEN];
@@ -145,6 +147,9 @@ int main(argc, argv)
     struct sockaddr_in me;
     struct sockaddr_in caddr;
     socklen_t caddr_len;
+    time_t ltime;
+    struct tm *today;
+    char time_buf[17];
 
     int  i, ret, fd, status, access_allow;
 
@@ -491,9 +496,17 @@ int main(argc, argv)
                         Rbj_cnt = 0;
                     }
                     if (Rvj_sw == 1){
-                        write(Fd_rvj, In_buf_rvj, strlen(In_buf_rvj));
+                        if (Rvj_cnt >= Rvj_max){
+                            sprintf(Out_buf, "%-s\t%-s\n", 
+                                    "OK", "COMMITED BUT RECOVERY JOURNAL OVERFLOW");
+                        }else{
+                            write(Fd_rvj, In_buf_rvj, strlen(In_buf_rvj));
+                            Rvj_cnt++;
+                            sprintf(Out_buf, "%-s\t%-s\n", "OK", "COMMITED");
+                        }
+                    }else{
+                        sprintf(Out_buf, "%-s\t%-s\n", "OK", "COMMITED");
                     }
-                    sprintf(Out_buf, "%-s\t%-s\n", "OK", "COMMITED");
                 }else{
                     for (i = 0; Tbl_rec[i].recname != NULL; i++){
                         if (strcmp(Tbl_rec[i].recname, RecName) == 0){
@@ -585,7 +598,12 @@ int main(argc, argv)
                 if (strncmp(In_buf, "end_tran", strlen("end_tran")) == 0 ||
                     strncmp(In_buf, "END_TRAN", strlen("END_TRAN")) == 0){
                     if (Rvj_sw == 1){
-                        write(Fd_rvj, In_buf, strlen(In_buf));
+                        if (Rvj_cnt >= Rvj_max){
+                            /* do nothing */
+                        }else{
+                            write(Fd_rvj, In_buf, strlen(In_buf));
+                            Rvj_cnt++;
+                        }
                     }
                 }
             }
@@ -614,7 +632,15 @@ int main(argc, argv)
                         exit(1);
                     }
                 }else{
-                    sprintf(Out_buf, "%-s\t%-s\n", "OK", "TRANSACTION END");
+                    if (Rvj_sw == 1){
+                        if (Rvj_cnt >= Rvj_max){
+                            sprintf(Out_buf, "%-s\t%-s\n", "OK", "TRANSACTION END BUT RECOVERY JOURNAL OVERFLOW");
+                        }else{
+                            sprintf(Out_buf, "%-s\t%-s\n", "OK", "TRANSACTION END");
+                        }
+                    }else{
+                        sprintf(Out_buf, "%-s\t%-s\n", "OK", "TRANSACTION END");
+                    }
                     if (truncate(Rbj_name, 0) < 0){
                         fprintf(stderr, "rollback journal(%-s) can't truncate, crashed\n", Rbj_name);
                         exit(1);
@@ -631,6 +657,45 @@ int main(argc, argv)
                     fprintf(stderr, "can't rollback, crashed\n");
                     exit(1);
                 }
+            }
+            sock_write(S_sock, Out_buf, strlen(Out_buf));
+        }else if (IsSwaprvj(In_buf)){
+/*
+ * reopen journals
+ */
+            if (Rvj_sw == 1){
+                close(Fd_rvj);
+
+                time(&ltime);
+                today = localtime(&ltime);
+                strftime(time_buf, sizeof time_buf, ".%Y%m%d.%H%M%S", today);
+                strncpy(Rvj_name_swap, Rvj_name, (sizeof Rvj_name_swap) - 1);
+                strncat(Rvj_name_swap, time_buf, (sizeof Rvj_name_swap) - strlen(Rvj_name_swap) - 1);
+                if (rename(Rvj_name, Rvj_name_swap) != 0){
+                    fprintf(stderr, "can't swaprvj to %s, crashed\n", Rvj_name_swap);
+                    exit(1);
+                }
+                
+                if (Safer_sw == 1){
+                    if ((Fd_rvj = open(Rvj_name, O_WRONLY|O_APPEND|O_SYNC)) < 0){
+                        if ((Fd_rvj = open(Rvj_name, O_WRONLY|O_CREAT|O_SYNC, S_IRUSR|S_IWUSR)) < 0){
+                            fprintf(stderr, "recovery journal(%-s) can't open, crashed\n", Rvj_name);
+                            exit(1);
+                        }
+                    }
+                }else{
+                    if ((Fd_rvj = open(Rvj_name, O_WRONLY|O_APPEND)) < 0){
+                        if ((Fd_rvj = open(Rvj_name, O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR)) < 0){
+                            fprintf(stderr, "recovery journal(%-s) can't open, crashed\n", Rvj_name);
+                            exit(1);
+                        }
+                    }
+                }
+                sprintf(Out_buf, "%-s\t%-s%-s\n", "OK", "SWAPRVJ TO ", Rvj_name_swap);
+                Rvj_cnt = 0;
+            }else{
+                Fd_rvj = -1;
+                sprintf(Out_buf, "%-s\t%-s\n", "NG", "NO RECOVERY JOURNAL");
             }
             sock_write(S_sock, Out_buf, strlen(Out_buf));
         }else{
@@ -1229,6 +1294,133 @@ int  IsShutdown(buf)
         *(command + strlen("shutdown")) != '\t'){
         if (strncmp(command, "SHUTDOWN", strlen("SHUTDOWN")) != 0 ||
             *(command + strlen("SHUTDOWN")) != '\t'){
+            IsGranted = TRUE;
+            fclose(Fp_passwd);
+            return FALSE;
+        }
+    }
+
+    p1++;
+    if ((p2 = strchr(p1, '\t')) == (char *)NULL){
+        fclose(Fp_passwd);
+        return FALSE;
+    }
+    user = p1;
+
+    p2++;
+    if ((p3 = strchr(p2, '\t')) == (char *)NULL){
+        if ((p3 = strchr(p2, '\r')) == (char *)NULL){
+            if ((p3 = strchr(p2, '\n')) == (char *)NULL){
+                fclose(Fp_passwd);
+                return FALSE;
+            }
+        }
+    }
+    password = p2;
+
+    while ((char *)fgets(Pw_buf, sizeof Pw_buf, Fp_passwd) != (char *)NULL){
+        skip_sw = 0;
+        if ((p1 = strchr(Pw_buf, ':')) == (char *)NULL){
+            skip_sw = 1;
+        }
+        if (skip_sw == 0){
+            i = 0;
+            while (*(user + i) != '\t' && *(Pw_buf + i) != ':'){
+                if (*(user + i) != *(Pw_buf + i)){
+                    skip_sw = 1;
+                    break;
+                }
+                i++;
+            }
+        }
+        if (skip_sw == 0){
+            if (*(user + i) != '\t' || *(Pw_buf + i) != ':'){
+                skip_sw = 1;
+            }
+        }
+
+        if (skip_sw == 0){
+            p1++;
+            if ((p2 = strchr(p1, ':')) == (char *)NULL){
+                skip_sw = 1;
+            }
+        }
+        if (skip_sw == 0){
+            i = 0;
+            while (*(password + i) != '\t' && 
+                   *(password + i) != '\n' &&
+                   *(password + i) != '\r' &&
+                   *(p1 + i) != ':'){
+                if (*(password + i) != *(p1 + i)){
+                    skip_sw = 1;
+                    break;
+                }
+                i++;
+            }
+        }
+        if (skip_sw == 0){
+            if ((*(password + i) != '\t' &&
+                 *(password + i) != '\n' &&
+                 *(password + i) != '\r') || *(p1 + i) != ':'){
+                skip_sw = 1;
+            }
+        }
+
+        if (skip_sw == 0){
+            p2++;
+            if ((p3 = strchr(p2, ':')) == (char *)NULL){
+                if ((p3 = strchr(p2, '\r')) == (char *)NULL){
+                    if ((p3 = strchr(p2, '\n')) == (char *)NULL){
+                        skip_sw = 1;
+                    }
+                }
+            }
+        }
+        if (skip_sw == 0){
+            if (strncmp(p2, "all", strlen("all")) != 0 &&
+                strncmp(p2, "ALL", strlen("ALL")) != 0){
+                skip_sw = 1;
+            }
+        }
+        if (skip_sw == 0){
+            break;
+        }
+    }
+
+    fclose(Fp_passwd);
+    if (skip_sw == 0){
+        IsGranted = TRUE;
+        return TRUE;
+    }else{
+        return FALSE;
+    }
+}
+
+int  IsSwaprvj(buf)
+    char *buf;
+{
+    char *p1, *p2, *p3;
+    char *command, *user, *password;
+    int skip_sw;
+    int i;
+
+    IsGranted = FALSE;
+    if ((Fp_passwd = fopen(Passwd_name, "r")) == (FILE *)NULL){
+        fclose(Fp_passwd);
+        return FALSE;
+    }
+
+    command = user = password = NULL_STR;
+
+    if ((p1 = strchr(buf, '\t')) == (char *)NULL){
+        fclose(Fp_passwd);
+        return FALSE;
+    }
+    command = buf;
+    if (strncmp(command, "swaprvj", strlen("swaprvj")) != 0 ||
+        *(command + strlen("swaprvj")) != '\t'){
+        if (strncmp(command, "SWAPRVJ", strlen("SWAPRVJ")) != 0 ||
+            *(command + strlen("SWAPRVJ")) != '\t'){
             IsGranted = TRUE;
             fclose(Fp_passwd);
             return FALSE;

@@ -2,7 +2,7 @@
 2.0  : 2003.02.01 マルチサーバ版.
 2.1  : 2003.02.06 tyrecover.sh, tyrollback.sh オプション変更.
                   tyserv, tyrecover, tysearch buffer overfllow fix.
-2.2  : 2003.??.?? Cygwin 1.3.12 対応.
+2.2  : 2003.04.28 Cygwin 1.3.12 対応.
                   FreeBSD 4.7-RELEASE 対応.
                   ジャーナル出力を fputs から write に変更.
                   起動スクリプト rc.tyserv のオプションを変更.
@@ -10,3 +10,11 @@
                   tyserv.confで行うように機能追加.
                   kill -HUP で tyserv.conf をリロードするように修正(対象
                   パラメータは TABLE_LIST,RVJ_SW,SAFER_SW,RVJ_MAX,RBJ_MAX,DEBUG).
+2.3  : 2003.06.01 リカバリジャーナルのスワップ機能を追加.
+                  tyserv.plにty_shutdown(),ty_swaprvj()を追加.
+                  COMMIT,END_TRAN時のリカバリジャーナル出力件数制限チェック洩れ修正
+                  open-cobolからのアクセスサンプルプログラムを追加
+
+                  tyrecover.shで最終のcommit又はend_tranまでデータ復旧するのを
+                  デフォルトとし、-f|--forceオプション指定時に強制的にリカバリ
+                  ジャーナルの最終までデータ復旧するようにした

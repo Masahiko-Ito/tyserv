@@ -1,4 +1,4 @@
-tyserv-2.2 -- database server which use typhoon RDBMS as database engine
+tyserv-2.3 -- database server which use typhoon RDBMS as database engine
 Copyright (C) 2003  Masahiko Ito
 
 These programs is free software; you can redistribute it and/or modify
@@ -59,16 +59,14 @@ C-ISAM」等の言葉に反応してしまうそこのあなたにこそ「tyserv」は有るの
 ダウンロード
 ============
 
-http://myh.no-ip.org/~tyserv/tyserv-2.2.tar.gz
+http://myh.no-ip.org/~tyserv/tyserv-2.3.tar.gz
 
-  1. Cygwin 1.3.12 対応
-  2. FreeBSD 4.7-RELEASE 対応
-  3. ジャーナル出力を fputs から write に変更
-  4. 起動スクリプト rc.tyserv のオプション変更
-  5. ジャーナル(リカバリ,ロールバック)の出力件数制限を
-     tyserv.confで行うように機能追加
-  6. kill -HUP で tyserv.conf をリロードするように修正(対象
-     パラメータは TABLE_LIST,RVJ_SW,SAFER_SW,RVJ_MAX,RBJ_MAX,DEBUG).
+  1. リカバリジャーナルのスワップ機能を追加.
+  2. tyserv.plにty_shutdown(),ty_swaprvj()を追加.
+  3. COMMIT,END_TRAN時のリカバリジャーナル出力件数制限チェック洩れ修正
+  4. open-cobolからのアクセスサンプルプログラムを追加
+  5. tyrecover.shのデフォルトの動作を最終のcommit又はend_tran実行時まで
+     データ復旧するように修正した
 
 インストール
 ============
@@ -76,11 +74,11 @@ http://myh.no-ip.org/~tyserv/tyserv-2.2.tar.gz
  1. システムにユーザ tyserv を追加する
  2. ユーザ tyserv 用にホームディレクトリ /home/tyserv を作成する
  3. tyserv でログインする
- 4. tyserv-2.2 を展開する
-     □ $ tar xvzf tyserv-2.2.tar.gz
-     □ $ cp -fr tyserv-2.2/typhoon .
-     □ $ cp -fr tyserv-2.2/tyserv .
-     □ $ cp -fr tyserv-2.2/rundir1 .
+ 4. tyserv-2.3 を展開する
+     □ $ tar xvzf tyserv-2.3.tar.gz
+     □ $ cp -fr tyserv-2.3/typhoon ~/
+     □ $ cp -fr tyserv-2.3/tyserv ~/
+     □ $ cp -fr tyserv-2.3/rundir1 ~/
  5. PATH に ${HOME}/typhoon/bin, ${HOME}/tyserv/bin を追加する
         ex. (/home/tyserv/.profile etc)
      □ PATH="${PATH}:${HOME}/typhoon/bin"
@@ -91,7 +89,7 @@ http://myh.no-ip.org/~tyserv/tyserv-2.2.tar.gz
      □ typhoon-1.11.0.tar.gz を取得する
         http://users.footprints.net/~kaz/typhoon.html
      □ $ tar xvzf typhoon-1.11.0.tar.gz
-     □ $ cd typhoon-1.11.0; patch -p1 <../tyserv-2.2/
+     □ $ cd typhoon-1.11.0; patch -p1 <../tyserv-2.3/
         typhoon-1.11.0.patch
      □ $ ./configure; make
      □ $ su
@@ -132,11 +130,15 @@ http://myh.no-ip.org/~tyserv/tyserv-2.2.tar.gz
     tyserv.conf を編集する
 14. システムをリブートする
 15. ユーザ tyserv でログインする
-16. サンプルスクリプトを動かして動作確認を行う
-     □ $ cd /home/tyserv/tyserv/sample
+16. サンプルスクリプトを動かして動作確認を行う(perl版)
+     □ $ cd /home/tyserv/tyserv/sample/perl
      □ $ ./sample1.pl localhost 20000
      □ $ ./sample2.pl localhost 20000
-17. 本番運用に備えて
+17. サンプルスクリプトを動かして動作確認を行う(open-cobol版)
+     □ $ cd /home/tyserv/tyserv/sample/open-cobol
+     □ $ make
+     □ $ ./sample1
+18. 本番運用に備えて
      □ /home/tyserv/tyserv/etc/passwd ファイルを編集し、
        
         ユーザ:パスワード:アクセス権限(*)
@@ -145,7 +147,7 @@ http://myh.no-ip.org/~tyserv/tyserv-2.2.tar.gz
         chmod 600 /home/tyserv/tyserv/etc/passwd を実行する。
        
         (*) アクセス権限
-         ☆ all : データベースの参照、更新、SHUTDOWN ができる。
+         ☆ all : データベースの参照、更新、SHUTDOWN、SWAPRVJ ができる。
          ☆ full : データベースの参照、更新ができる。
          ☆ get : データベースの参照ができる。
      □ /etc/hosts.allow, /etc/hosts.deny を適切に設定する
@@ -213,8 +215,8 @@ tyserv の開いているソケットポートにコマンドを書き込んで、同一ポートか
 ートする全ての言語から tyserv へのアクセスを行うことが出来るはずです
 。簡単な話し telnet でアクセス出来ます(実用的かは別にして(^^;)。
 
-また、perl用のアクセスライブラリ tyserv/sample/tyserv.pl を用意してま
-す。使い方は tyserv/sample 以下のスクリプトを参照して下さい。
+また、perl用のアクセスライブラリ tyserv/sample/perl/tyserv.pl を用意
+してます。使い方は tyserv/sample/perl 以下のスクリプトを参照して下さい。
 
 各コマンドのトークンの区切り文字はタブ(0x09)です。
 
@@ -262,8 +264,7 @@ tyserv の開いているソケットポートにコマンドを書き込んで、同一ポートか
     ません。
  ・ COMMIT
     トランザクションを確定します。一般的にはコミット実行時に排他制御
-    を解除する実装が普通ですが、tyserv では排他制御の解除を行いません
-    。
+    を解除する実装が普通ですが、tyserv では排他制御の解除を行いません。
  ・ ABORT_TRAN
     トランザクションの開始時点、コミットの実行時点のうち、近いほうの
     時点の状態にDBの内容を戻し、トランザクションを終了します。排他制
@@ -272,8 +273,11 @@ tyserv の開いているソケットポートにコマンドを書き込んで、同一ポートか
     トランザクションを確定し、終了します。排他制御の解除を行います。
  ・ SHUTDOWN USER PASSWORD
     tyserv を停止します。
+ ・ SWAPRVJ USER PASSWORD
+    リカバリジャーナルをスワップさせます。スワップ先のファイル名は、
+    `実行時ディレクトリ/journal/rvj.dat.YYYYMMDD.HHMMSS' となります。
 
-さらなる情報は tyserv/doc/*, tyserv/sample/*.pl を参照して下さい。
+さらなる情報は tyserv/doc/*, tyserv/sample/* を参照して下さい。
 
 tyserv への telnet でのアクセス例
 =================================
@@ -380,6 +384,164 @@ $rec{salary} *= 10;
 # プログラム終了
 exit 0;
 
+open-cobol用アクセスインターフェース(tycob.c)利用例
+===================================================
+
+tyservへのアクセス部分だけに焦点をしぼったコーディング例ですのでエラ
+ー対応のコーディングは一切省いています。御了承下さい。
+       IDENTIFICATION   DIVISION.
+       PROGRAM-ID.      sample1.
+       ENVIRONMENT      DIVISION.
+      *------------------------------------------
+      * 作業領域定義
+      *------------------------------------------
+       WORKING-STORAGE  SECTION.
+      *------------------------------------------
+      * 定数定義
+      *------------------------------------------
+       01 C-NULL        PIC X(1) VALUE LOW-VALUE.
+       01 C-TAB         PIC X(1) VALUE X'09'.
+      *------------------------------------------
+      * ワーク定義
+      *------------------------------------------
+      *
+      * sock_* 関係インターフェース項目
+      *
+       01 HOST.
+          02 FILLER     PIC X(9) VALUE 'localhost'.
+          02 FILLER     PIC X(1) VALUE LOW-VALUE.
+       01 PORT.
+          02 FILLER     PIC X(5) VALUE '20000'.
+          02 FILLER     PIC X(1) VALUE LOW-VALUE.
+       01 FD-SOCK.
+          02 FILLER     PIC X(5) VALUE SPACE.
+          02 FILLER     PIC X(1) VALUE LOW-VALUE.
+       01 SEND-DATA.
+          02 FILLER     PIC X(1024) VALUE SPACE.
+          02 FILLER     PIC X(1) VALUE LOW-VALUE.
+       01 RECV-DATA.
+          02 FILLER     PIC X(1024) VALUE SPACE.
+          02 FILLER     PIC X(1) VALUE LOW-VALUE.
+      *
+      * get_* 関係インターフェース項目
+      *
+       01 STAT1         PIC X(2) VALUE SPACE.
+       01 STAT2         PIC X(1024) VALUE SPACE.
+       01 G-ID          PIC X(4).
+       01 G-NAME        PIC X(20).
+       01 G-SALARY      PIC 9(7).
+      *------------------------------------------
+      * 処理開始
+      *------------------------------------------
+       PROCEDURE        DIVISION.
+      *
+       MAIN-EN.
+      *
+      * ソケットオープン
+      *
+         CALL 'sock_open' USING HOST PORT FD-SOCK.
+      *
+      * 更新モードトランザクション開始
+      *
+         INITIALIZE SEND-DATA RECV-DATA STAT1 STAT2.
+         STRING 'start_tran' DELIMITED BY SIZE
+                C-TAB DELIMITED BY SIZE
+                'user' DELIMITED BY SIZE
+                C-TAB DELIMITED BY SIZE
+                'user' DELIMITED BY SIZE
+                C-NULL DELIMITED BY SIZE
+                INTO SEND-DATA.
+         CALL 'sock_send_recv' USING FD-SOCK SEND-DATA RECV-DATA.
+         CALL 'get_status' USING RECV-DATA STAT1 STAT2.
+      *
+      * 挿入
+      *
+         INITIALIZE SEND-DATA RECV-DATA STAT1 STAT2.
+         STRING 'put' DELIMITED BY SIZE
+                C-TAB DELIMITED BY SIZE
+                'smp1' DELIMITED BY SIZE
+                C-TAB DELIMITED BY SIZE
+                'id=9999' DELIMITED BY SIZE
+                C-TAB DELIMITED BY SIZE
+                'name=Mr. X' DELIMITED BY SIZE
+                C-TAB DELIMITED BY SIZE
+                'salary=0900000' DELIMITED BY SIZE
+                C-NULL DELIMITED BY SIZE
+                INTO SEND-DATA.
+         CALL 'sock_send_recv' USING FD-SOCK SEND-DATA RECV-DATA.
+         CALL 'get_status' USING RECV-DATA STAT1 STAT2.
+      *
+      * 検索
+      *
+         INITIALIZE SEND-DATA RECV-DATA STAT1 STAT2.
+         STRING 'get' DELIMITED BY SIZE
+                C-TAB DELIMITED BY SIZE
+                'smp1' DELIMITED BY SIZE
+                C-TAB DELIMITED BY SIZE
+                'pkey' DELIMITED BY SIZE
+                C-TAB DELIMITED BY SIZE
+                'eq' DELIMITED BY SIZE
+                C-TAB DELIMITED BY SIZE
+                '9999' DELIMITED BY SIZE
+                C-NULL DELIMITED BY SIZE
+                INTO SEND-DATA.
+         CALL 'sock_send_recv' USING FD-SOCK SEND-DATA RECV-DATA.
+         CALL 'get_status' USING RECV-DATA STAT1 STAT2.
+      *
+      * 項目(SALARY)を更新
+      *
+         INITIALIZE G-ID G-NAME G-SALARY.
+         CALL 'get_value' USING RECV-DATA 'id' G-ID.
+         CALL 'get_value' USING RECV-DATA 'name' G-NAME.
+         CALL 'get_value' USING RECV-DATA 'salary' G-SALARY.
+         COMPUTE G-SALARY = G-SALARY * 10.
+      *
+      * 更新
+      *
+         INITIALIZE SEND-DATA RECV-DATA STAT1 STAT2.
+         STRING 'update' DELIMITED BY SIZE
+                C-TAB DELIMITED BY SIZE
+                'smp1' DELIMITED BY SIZE
+                C-TAB DELIMITED BY SIZE
+                G-ID DELIMITED BY SIZE
+                C-TAB DELIMITED BY SIZE
+                'salary=' DELIMITED BY SIZE
+                G-SALARY DELIMITED BY SIZE
+                C-NULL DELIMITED BY SIZE
+                INTO SEND-DATA.
+         CALL 'sock_send_recv' USING FD-SOCK SEND-DATA RECV-DATA.
+         CALL 'get_status' USING RECV-DATA STAT1 STAT2.
+      *
+      * 削除
+      *
+         INITIALIZE SEND-DATA RECV-DATA STAT1 STAT2.
+         STRING 'delete' DELIMITED BY SIZE
+                C-TAB DELIMITED BY SIZE
+                'smp1' DELIMITED BY SIZE
+                C-TAB DELIMITED BY SIZE
+                '9999' DELIMITED BY SIZE
+                C-NULL DELIMITED BY SIZE
+                INTO SEND-DATA.
+         CALL 'sock_send_recv' USING FD-SOCK SEND-DATA RECV-DATA.
+         CALL 'get_status' USING RECV-DATA STAT1 STAT2.
+      *
+      * トランザクション終了
+      *
+         INITIALIZE SEND-DATA RECV-DATA STAT1 STAT2.
+         STRING 'end_tran' DELIMITED BY SIZE
+                INTO SEND-DATA.
+         CALL 'sock_send_recv' USING FD-SOCK SEND-DATA RECV-DATA.
+         CALL 'get_status' USING RECV-DATA STAT1 STAT2.
+      *
+      * ソケットクローズ
+      *
+         CALL 'sock_close' USING FD-SOCK.
+       MAIN-EX.
+         STOP RUN.
+      *------------------------------------------
+      * 処理終了
+      *------------------------------------------
+
 プログラミングの注意点
 ======================
 
@@ -404,6 +566,8 @@ exit 0;
 ├──┼─────────────────────────┤
 │OK  │COMMITED                                          │
 ├──┼─────────────────────────┤
+│OK  │COMMITED BUT RECOVERY JOURNAL OVERFLOW            │
+├──┼─────────────────────────┤
 │OK  │DELETED                                           │
 ├──┼─────────────────────────┤
 │OK  │FOUND                                             │
@@ -414,9 +578,13 @@ exit 0;
 ├──┼─────────────────────────┤
 │OK  │ROLLBACKED                                        │
 ├──┼─────────────────────────┤
+│OK  │SWAPRVJ TO full_path_of_recovery_journal          │
+├──┼─────────────────────────┤
 │OK  │TRANSACTION ABORT, ROLLBACKED                     │
 ├──┼─────────────────────────┤
 │OK  │TRANSACTION END                                   │
+├──┼─────────────────────────┤
+│OK  │TRANSACTION END BUT RECOVERY JOURNAL OVERFLOW     │
 ├──┼─────────────────────────┤
 │OK  │TRANSACTION START                                 │
 ├──┼─────────────────────────┤
@@ -429,6 +597,8 @@ exit 0;
 │NG  │CAN NOT READ SOCKET                               │
 ├──┼─────────────────────────┤
 │NG  │DUPLICATE                                         │
+├──┼─────────────────────────┤
+│NG  │NO RECOVERY JOURNAL                               │
 ├──┼─────────────────────────┤
 │NG  │NO ROLLBACK JOURNAL                               │
 ├──┼─────────────────────────┤
@@ -639,7 +809,7 @@ tyserv 再生成
 データベース復旧ツール(tyrecover.sh)
 ====================================
 
- ・ usage : tyrecover.sh [-d 実行時ディレクトリ] [-s|--stdin] [-v|--verbose]
+ ・ usage : tyrecover.sh [-d 実行時ディレクトリ] [-s|--stdin] [-v|--verbose] [-f|--force]
    
      □ -d 実行時ディレクトリ :
         実行時ディレクトリ/journal/rvj.dat からデータベースの復旧を行
@@ -647,6 +817,8 @@ tyserv 再生成
         rvj.datから復旧を行う。
      □ -s, --stdin : リカバリジャーナルを標準入力から読む
      □ -v, --verbose : おしゃべりモード
+     □ -f, --force : 強制的にリカバリジャーナルの最終までデータ復旧する
+                      デフォルトは最終のcommit又はend_tranまでデータ復旧する
  ・ 皆さんはディスクのバックアップは取っておられますか？。取ってない
     という方も大勢おられると思います。また取っているとしても毎日取る
     なんて方は極まれなんではないでしょうか。
@@ -726,7 +898,7 @@ tyservは排他の単位がデータベースなので、排他モードのトランザクション
 ることで共有そのものを避ける方法で排他制御を行っている(というか行わず
 にすましてるというか...)為にしかたのないことです(^^;。
 
-そこでtyserv-2.2ではデータベースに含まれるテーブルを幾つかのグループ
+そこでtyserv-2.3ではデータベースに含まれるテーブルを幾つかのグループ
 に分けて、そのグループ毎に別々のサーバを起動することで排他の粒度を細
 かくできるように拡張を行いました。
 
@@ -777,11 +949,11 @@ tyservは排他の単位がデータベースなので、排他モードのトランザクション
      □ ty_abort_trans(@tran_param)
      □ ty_commits(@tran_param)
      □ ty_rollbacks(@tran_param)
- ・ サンプルスクリプトの動かし方
+ ・ サンプルスクリプトの動かし方(perl版)
      □ $ cd /home/tyserv
-     □ $ cp -fr tyserv-2.2/rundir2 .
+     □ $ cp -fr tyserv-2.3/rundir2 ~/
      □ $ /etc/rc.d/rc.tyserv -d /home/tyserv/rundir2
-     □ $ cd /home/tyserv/tyserv/sample
+     □ $ cd /home/tyserv/tyserv/sample/perl
      □ $ ./sample3.pl localhost 20000 update 20001 update
 
 tysearch(検索コマンド)実行例
@@ -829,10 +1001,6 @@ Makefile中のLIBSマクロに -lcompat を追加してください。また、tacコマンド
 TODO & BUGS
 ===========
 
- ・ データベース復旧ツール(tyrecover.sh)はコミット情報を参照してませ
-    ん。よってデータベースは常にリカバリジャーナルの最後まで復旧され
-    てしまいます。将来的には最終のコミット時点まで復旧するようにした
-    いと考えてます。
  ・ /home/tyserv/tyserv/etc/passwd 中のパスワードは暗号化されてません
     。パーミッションに注意してください。
 

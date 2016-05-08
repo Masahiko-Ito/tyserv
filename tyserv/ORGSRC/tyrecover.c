@@ -2,7 +2,7 @@
  * __MESSAGE__
  *
  * tyhpoon database recovery program by M.Ito
- * Ver. 1.0    2002.07.01
+ *
  */
 #include <stdio.h>
 #include <sys/types.h>

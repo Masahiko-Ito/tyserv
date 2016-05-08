@@ -2,7 +2,6 @@
  * __MESSAGE__
  *
  * tyhpoon database search program by M.Ito
- * Ver. 1.0    2002.07.01
  *
  * Usage : tysearch TABLE   START   RECCOUNT KEY     KEYVALUE ...
  *                  argv[1] argv[2] argv[3]  argv[4] argv[5]

@@ -270,6 +270,40 @@ sub ty_delete(){
     
     return ($sts1, $sts2);
 }
+#
+# 機能:シャットダウン
+# 引数:socket_handle, user_name, password
+# 戻値:status1, status2
+# 例  :($status1, $status2) = ty_shutdown($handle, "user", "hogehoge");
+#
+sub ty_shutdown(){
+    my ($handle, $user, $passwd) = @_;
+    my ($response, $sts1, $sts2);
+
+    printf($handle "shutdown\t$user\t$passwd\n");
+    $response = <$handle>;
+    chop $response;
+    ($sts1, $sts2) = split(/\t/, $response, 2);
+    
+    return ($sts1, $sts2);
+}
+#
+# 機能:リカバリジャーナルスワップ
+# 引数:socket_handle, user_name, password
+# 戻値:status1, status2
+# 例  :($status1, $status2) = ty_swaprvj($handle, "user", "hogehoge");
+#
+sub ty_swaprvj(){
+    my ($handle, $user, $passwd) = @_;
+    my ($response, $sts1, $sts2);
+
+    printf($handle "swaprvj\t$user\t$passwd\n");
+    $response = <$handle>;
+    chop $response;
+    ($sts1, $sts2) = split(/\t/, $response, 2);
+    
+    return ($sts1, $sts2);
+}
 #----------------------------------------------------------------------
 #
 # 機能:複数トランザクションの一括開始
