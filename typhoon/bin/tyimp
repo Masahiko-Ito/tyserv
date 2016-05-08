@@ -1,8 +1,5 @@
 #! /bin/sh
-if [ "X${TYPHOON_DIR}" = "X" ]
-then
-    TYPHOON_DIR=/usr/local/typhoon;export TYPHOON_DIR
-fi
+TYPHOON_DIR=${HOME}/typhoon
 #
 if [ "X$1" = "X-h" -o "X$1" = "X--help" ]
 then
@@ -31,16 +28,6 @@ else
     exit 1
 fi
 #
-##cat |\
-##sort |\
-##sed -e 's/$//g' -e 's///g' -e 's/ *	 */	/g' -e 's/ *$//g' |\
-##perl -e 'while ($rec = <STDIN>){
-##    $rec =~ s/\033(..)(..)/pack("CC",hex($1),hex($2))/eg;
-##    print $rec;
-##}' |\
-##sed -e 's/\\/\\\\/g' | \
-##sed -e 's/^/\"/g' -e 's/	/\", \"/g' -e 's/$/\"/g' | \
-##tyimport -s $1
 cat |\
 sort |\
 sed -e 's/\\/\\\\/g' \

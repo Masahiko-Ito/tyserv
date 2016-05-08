@@ -1,46 +1,60 @@
 #! /bin/sh
-if [ "X${TYPHOON_DIR}" = "X" ]
-then
-    TYPHOON_DIR=/usr/local/typhoon;export TYPHOON_DIR
-fi
-#
-if [ "X${TYPHOON_DB}" = "X" ]
-then
-    TYPHOON_DB=typhoondb;export TYPHOON_DB
-fi
-#
-if [ "X${TYSERV_DIR}" = "X" ]
-then
-    TYSERV_DIR=/usr/local/tyserv;export TYSERV_DIR
-fi
-#
-INITFILE=${TYSERV_DIR}/conf/tyserv.conf
 #
 if [ X"$1" = "X-h" -o X"$1" = "X--help" ]
 then
-    echo "usage : `basename $0`"
-    echo " rollback database from stdin(rollback journal)"
+    echo "usage : `basename $0` [-d tyserv_rundir] [-stdin]"
+    echo " rollback database from rollback journal"
     exit 1
 fi
 #
-if [ -r ${TYSERV_DIR}/journal/rbj.dat ]
+DEF_TYSERV_DIR=/home/tyserv/tyserv
+DEF_TYSERV_RUNDIR=/home/tyserv/rundir1
+TYSERV_RUNDIR=${DEF_TYSERV_RUNDIR}
+#
+STDIN_SW=""
+#
+while [ "$#" != "0" ]
+do
+    case $1 in
+    -d )
+        shift
+        TYSERV_RUNDIR=$1
+        ;;
+    -stdin )
+        STDIN_SW=$1
+        ;;
+    esac
+    shift
+done
+#
+TAC=/usr/bin/tac
+#
+if [ "X${STDIN_SW}" = "X-stdin" ]
 then
-##    /bin/cat -n ${TYSERV_DIR}/journal/rbj.dat |\
-##    /usr/bin/sort -n -r |\
-##    /usr/bin/sed -e 's/^ *[0-9]*	*//g' |\
-###                               ^TAB
-##    ${TYSERV_DIR}/bin/tyrecover 1
-###                               ^when 1, output recovery journal
-    if [ -x /usr/bin/tac ]
+    if [ -x ${TAC} ]
     then
-        /usr/bin/tac ${TYSERV_DIR}/journal/rbj.dat |\
-        ${TYSERV_DIR}/bin/tyrecover 1
-#                                   ^when 1, output recovery journal
+        ${TAC} |\
+        ${DEF_TYSERV_DIR}/bin/tyrecover 1 ${TYSERV_RUNDIR}
+#                                       ^ ^tyserv directory
+#                                       ^when 1, output recovery journal
         exit 0
     else
         exit 1
     fi
 else
-    exit 1
+    if [ -r ${TYSERV_RUNDIR}/journal/rbj.dat ]
+    then
+        if [ -x ${TAC} ]
+        then
+            ${TAC} ${TYSERV_RUNDIR}/journal/rbj.dat |\
+            ${DEF_TYSERV_DIR}/bin/tyrecover 1 ${TYSERV_RUNDIR}
+#                                           ^ ^tyserv directory
+#                                           ^when 1, output recovery journal
+            exit 0
+        else
+            exit 1
+        fi
+    else
+        exit 1
+    fi
 fi
-

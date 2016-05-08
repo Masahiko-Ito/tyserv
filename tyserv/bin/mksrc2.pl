@@ -26,7 +26,7 @@ while ($line = <STDIN>){
 #include <typhoon.h>
 
 /* DataBase definition */
-#include "__DB__.h"
+#include "typhoondb.h"
 
 extern FILE *Fp_rvj;
 extern FILE *Fp_rbj;

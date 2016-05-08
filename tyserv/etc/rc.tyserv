@@ -7,31 +7,53 @@
 # description: tyserv is database management system, which use typhoon
 # processname: tyserv
 
-ROLLBACKER=/home/tyserv/tyserv/bin/tyrollback.sh
-SERVER=/home/tyserv/tyserv/bin/tyserv
+if [ X"$1" = "X-h" -o X"$1" = "X--help" ]
+then
+    echo "usage : `basename $0` [-d tyserv_rundir] [-w]"
+    echo "  -d tyserv run diriectory"
+    echo "  -w warm start"
+    exit 1
+fi
 
-HOSTNAME=localhost;export HOSTNAME
-TYPHOON_DIR=/home/tyserv/typhoon;export TYPHOON_DIR
-TYPHOON_DB=typhoondb;export TYPHOON_DB
-TYSERV_DIR=/home/tyserv/tyserv;export TYSERV_DIR
+DEF_TYSERV_DIR=/home/tyserv/tyserv
+DEF_TYSERV_RUNDIR=/home/tyserv/tyserv
+ROLLBACKER=${DEF_TYSERV_DIR}/bin/tyrollback.sh
+SERVER=${DEF_TYSERV_DIR}/bin/tyserv
+
+TYSERV_RUNDIR=${DEF_TYSERV_RUNDIR}
+WARM_OPT=""
+
+while [ "$#" != "0" ]
+do
+    case $1 in
+    -w )
+        WARM_OPT=$1
+        ;;
+    -d )
+        shift
+        TYSERV_RUNDIR=$1
+        ;;
+    esac
+    shift
+done
 
 [ -f $ROLLBACKER ] || exit 0
 [ -f $SERVER ] || exit 0
 
-if [ "X$1" = "X-w" ]
+if [ "X${WARM_OPT}" = "X-w" ]
 then
     echo -n "Starting tyserv server(warm): "
-    if [ -s ${TYSERV_DIR}/journal/rbj.dat ]
+    if [ -s ${TYSERV_RUNDIR}/journal/rbj.dat ]
     then
         echo -n "Starting tyserv rollback: "
-        $ROLLBACKER
+        $ROLLBACKER -d ${TYSERV_RUNDIR}
     fi
 else
     echo -n "Starting tyserv server(cold): "
-    /bin/rm -f ${TYSERV_DIR}/journal/rbj.dat
-    /bin/rm -f ${TYSERV_DIR}/journal/rvj.dat
+    /bin/rm -f ${TYSERV_RUNDIR}/journal/rbj.dat
+    /bin/rm -f ${TYSERV_RUNDIR}/journal/rvj.dat
 fi
 
-$SERVER &
-echo $! >${TYSERV_DIR}/etc/tyserv.pid
+$SERVER ${TYSERV_RUNDIR} &
+echo $! >${TYSERV_RUNDIR}/etc/tyserv.pid
 echo

@@ -28,8 +28,8 @@ int deny_severity = LOG_WARNING;
 #include <typhoon.h>
 
 /* DataBase definition */
-#define  DATABASE_NAME "__DB__"
-#include "__DB__.h"
+#define  DATABASE_NAME "typhoondb"
+#include "typhoondb.h"
 
 #define BUF_LEN (1024 * 16)
 #define PATH_LEN (256)
@@ -38,10 +38,11 @@ int deny_severity = LOG_WARNING;
 #define TRUE !FALSE;
 
 #define DEF_HOST "localhost"
-#define DEF_PORT ((unsigned short)10000)
+#define DEF_PORT ((unsigned short)20000)
 #define DEF_SOCKET_WAIT_QUEUE (32)
-#define DEF_TYPHOON_DIR  "/usr/local/typhoon"
-#define DEF_TYSERV_DIR  "/usr/local/tyserv"
+#define DEF_TYPHOON_DIR  "/home/tyserv/typhoon"
+#define DEF_TYSERV_DIR  "/home/tyserv/tyserv"
+#define DEF_TYSERV_RUNDIR  "/home/tyserv/rundir1"
 #define DEF_RVJ_SW (1)
 #define DEF_RBJ_SW (1)
 #define DEF_SAFER_SW (1)
@@ -57,6 +58,9 @@ char Rvj_name[PATH_LEN];
 char Rbj_name[PATH_LEN];
 char Passwd_name[PATH_LEN];
 char Daemon_name[PATH_LEN];
+char Tyserv_dir[PATH_LEN];
+char Tyserv_rundir[PATH_LEN];
+char Conf_file[PATH_LEN];
 int  Rvj_sw;
 int  Rbj_sw;
 int  Safer_sw;
@@ -89,6 +93,8 @@ int  sock_write();
 int  get_func_rec();
 char *FuncName;
 char *RecName;
+char Table_list[BUF_LEN];
+char Table_name[PATH_LEN];
 
 int  get_key_cond();
 char *KeyName;
@@ -161,6 +167,17 @@ int main(argc, argv)
 /*
  * set from initialze file
  */
+    if (argc < 2){
+        fprintf(stderr, "usage : %-s TYSERV_RUNDIR\n", argv[0]);
+        exit(1);
+    }
+
+    if (argv[1][0] == '\0'){
+        strncpy(Tyserv_rundir, DEF_TYSERV_RUNDIR, (sizeof Tyserv_rundir) - 1);
+    }else{
+        strncpy(Tyserv_rundir, argv[1], (sizeof Tyserv_rundir) - 1);
+    }
+
     init_file();
 
 /*
@@ -654,6 +671,16 @@ int get_func_rec(buf)
         }
     }
     *p2 = '\0';
+
+    if (Table_list[0] != '\0'){
+        strncpy(Table_name, "\t", (sizeof Dbd_dir) - 1);
+        strncat(Table_name, p1, (sizeof Table_name) - strlen(Table_name) - 1);
+        strncat(Table_name, "\t", (sizeof Table_name) - strlen(Table_name) - 1);
+        if (strstr(Table_list, Table_name) == (char *)NULL){
+            return -1;
+        }
+    }
+
     RecName = p1;
 
     return 0;
@@ -879,21 +906,26 @@ int  init_file()
     strncat(Dbd_dir, "/dbd", (sizeof Dbd_dir) - strlen(Dbd_dir) - 1);
     strncpy(Data_dir, DEF_TYPHOON_DIR, (sizeof Data_dir) - 1);
     strncat(Data_dir, "/data", (sizeof Data_dir) - strlen(Data_dir) - 1);
-    strncpy(Rvj_name, DEF_TYSERV_DIR, (sizeof Rvj_name) - 1);
+    strncpy(Rvj_name, Tyserv_rundir, (sizeof Rvj_name) - 1);
     strncat(Rvj_name, "/journal/rvj.dat", (sizeof Rvj_name) - strlen(Rvj_name) - 1);
-    strncpy(Rbj_name, DEF_TYSERV_DIR, (sizeof Rbj_name) - 1);
+    strncpy(Rbj_name, Tyserv_rundir, (sizeof Rbj_name) - 1);
     strncat(Rbj_name, "/journal/rbj.dat", (sizeof Rbj_name) - strlen(Rbj_name) - 1);
+    strncpy(Tyserv_dir, DEF_TYSERV_DIR, (sizeof Tyserv_dir) - 1);
     strncpy(Rollback_script, DEF_TYSERV_DIR, (sizeof Rollback_script) - 1);
     strncat(Rollback_script, "/bin/tyrollback.sh", (sizeof Rollback_script) - strlen(Rollback_script) - 1);
     strncpy(Passwd_name, DEF_TYSERV_DIR, (sizeof Passwd_name) - 1);
     strncat(Passwd_name, "/etc/passwd", (sizeof Passwd_name) - strlen(Passwd_name) - 1);
     strncpy(Daemon_name, DEF_DAEMON_NAME, (sizeof Daemon_name) - 1);
+    Table_list[0] = '\0';
     Rvj_sw = DEF_RVJ_SW;
     Safer_sw = DEF_SAFER_SW;
     Debug = DEF_DEBUG;
 
-    if ((fp = fopen("__INITFILE__", "r")) == (FILE *)NULL){
-        fprintf(stderr, "can not open initfile(%-s), crashed\n", "__INITFILE__");
+    strncpy(Conf_file, Tyserv_rundir, (sizeof Conf_file) - 1);
+    strncat(Conf_file, "/conf/tyserv.conf", (sizeof Conf_file) - strlen(Conf_file) - 1);
+
+    if ((fp = fopen(Conf_file, "r")) == (FILE *)NULL){
+        fprintf(stderr, "can not open initfile(%-s), crashed\n", Conf_file);
         exit(1);
     }
 
@@ -916,16 +948,16 @@ int  init_file()
             strncpy(Data_dir, buf + strlen("TYPHOON_DIR="), (sizeof Data_dir) - 1);
             strncat(Data_dir, "/data", (sizeof Data_dir) - strlen(Data_dir) - 1);
         }else if(strncmp(buf, "TYSERV_DIR=", strlen("TYSERV_DIR=")) == 0){
-            strncpy(Rvj_name, buf + strlen("TYSERV_DIR="), (sizeof Rvj_name) - 1);
-            strncat(Rvj_name, "/journal/rvj.dat", (sizeof Rvj_name) - strlen(Rvj_name) - 1);
-            strncpy(Rbj_name, buf + strlen("TYSERV_DIR="), (sizeof Rbj_name) - 1);
-            strncat(Rbj_name, "/journal/rbj.dat", (sizeof Rbj_name) - strlen(Rbj_name) - 1);
-            strncpy(Rollback_script, buf + strlen("TYSERV_DIR="), (sizeof Rollback_script) - 1);
+            strncpy(Tyserv_dir, buf + strlen("TYSERV_DIR="), (sizeof Tyserv_dir) - 1);
+            strncpy(Rollback_script, Tyserv_dir, (sizeof Rollback_script) - 1);
             strncat(Rollback_script, "/bin/tyrollback.sh", (sizeof Rollback_script) - strlen(Rollback_script) - 1);
-            strncpy(Passwd_name, buf + strlen("TYSERV_DIR="), (sizeof Passwd_name) - 1);
+            strncpy(Passwd_name, Tyserv_dir, (sizeof Passwd_name) - 1);
             strncat(Passwd_name, "/etc/passwd", (sizeof Passwd_name) - strlen(Passwd_name) - 1);
         }else if(strncmp(buf, "DAEMON_NAME=", strlen("DAEMON_NAME=")) == 0){
             strncpy(Daemon_name, buf + strlen("DAEMON_NAME="), (sizeof Daemon_name) - 1);
+        }else if(strncmp(buf, "TABLE_LIST=", strlen("TABLE_LIST=")) == 0){
+            strncat(Table_list, "\t", (sizeof Table_list) - 1);
+            strncat(Table_list, buf + strlen("TABLE_LIST="), (sizeof Table_list) - strlen(Table_list) - 1);
         }else if(strncmp(buf, "RVJ_SW=", strlen("RVJ_SW=")) == 0){
             Rvj_sw = atoi(buf + strlen("RVJ_SW="));
         }else if(strncmp(buf, "SAFER_SW=", strlen("SAFER_SW=")) == 0){
@@ -933,6 +965,10 @@ int  init_file()
         }else if(strncmp(buf, "DEBUG=", strlen("DEBUG=")) == 0){
             Debug = atoi(buf + strlen("DEBUG="));
         }
+    }
+
+    if (Table_list[0] != '\0'){
+        strncat(Table_list, "\t", (sizeof Table_list) - strlen(Table_list) - 1);
     }
 
     fclose(fp);
@@ -948,6 +984,7 @@ int  init_file()
         printf("Rollback_script=(%-s)\n", Rollback_script);
         printf("Passwd_name=(%-s)\n", Passwd_name);
         printf("Daemon_name=(%-s)\n", Daemon_name);
+        printf("Table_list=(%-s)\n", Table_list);
         printf("Rvj_sw=(%d)\n", Rvj_sw);
         printf("Safer_sw=(%d)\n", Safer_sw);
         printf("Debug=(%d)\n", Debug);
@@ -965,7 +1002,7 @@ int  rollback()
 #endif
 
     if ((pid = fork()) == 0){
-        execl(Rollback_script, "tyrollback", (char *)NULL);
+        execl(Rollback_script, "tyrollback", "-d", Tyserv_rundir, (char *)NULL);
         fprintf(stderr, "can't exec %-s\n", Rollback_script);
         exit(1);
     }else{

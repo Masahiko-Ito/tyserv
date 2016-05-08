@@ -20,11 +20,11 @@
 #include <typhoon.h>
 
 /* DataBase definition */
-#define  DATABASE_NAME "__DB__"
-#include "__DB__.h"
+#define  DATABASE_NAME "typhoondb"
+#include "typhoondb.h"
 
-#define DEF_DBD_DIR  "/usr/local/typhoon/dbd"
-#define DEF_DATA_DIR "/usr/local/typhoon/data"
+#define DEF_DBD_DIR  "/home/tyserv/typhoon/dbd"
+#define DEF_DATA_DIR "/home/tyserv/typhoon/data"
 
 #define BUF_LEN (1024 * 16)
 #define DIR_LEN (256)

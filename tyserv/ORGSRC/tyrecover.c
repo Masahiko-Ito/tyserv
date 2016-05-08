@@ -17,15 +17,15 @@
 #include <typhoon.h>
 
 /* DataBase definition */
-#define  DATABASE_NAME "__DB__"
-#include "__DB__.h"
+#define  DATABASE_NAME "typhoondb"
+#include "typhoondb.h"
 
 #define FD_STDIN (0)
 #define BUF_LEN (1024 * 16)
 #define PATH_LEN (256)
 
-#define DEF_TYPHOON_DIR  "/usr/local/typhoon"
-#define DEF_TYSERV_DIR  "/usr/local/tyserv"
+#define DEF_TYPHOON_DIR  "/home/tyserv/typhoon"
+#define DEF_TYSERV_DIR  "/home/tyserv/rundir1"
 #define DEF_RBJ_SW (0)
 #define DEF_SAFER_SW (1)
 #define DEF_DEBUG (0)
@@ -34,6 +34,8 @@ char Dbd_dir[PATH_LEN];
 char Data_dir[PATH_LEN];
 char Rvj_name[PATH_LEN];
 char Rbj_name[PATH_LEN];
+char Tyserv_rundir[PATH_LEN];
+char Conf_file[PATH_LEN];
 int  Rvj_sw;
 int  Rbj_sw;
 int  Safer_sw;
@@ -97,9 +99,15 @@ int main(argc, argv)
 
     int  i, ret, fd, status;
 
-    if (argc < 2){
-        fprintf(stderr, "usage : %-s RVJ_SW\n", argv[0]);
+    if (argc < 3){
+        fprintf(stderr, "usage : %-s RVJ_SW TYSERV_RUNDIR\n", argv[0]);
         exit(1);
+    }
+
+    if (argv[2][0] == '\0'){
+        strncpy(Tyserv_rundir, DEF_TYSERV_DIR, (sizeof Tyserv_rundir) - 1);
+    }else{
+        strncpy(Tyserv_rundir, argv[2], (sizeof Tyserv_rundir) - 1);
     }
 
 /*
@@ -414,15 +422,18 @@ int  init_file()
     strncat(Dbd_dir, "/dbd", (sizeof Dbd_dir) - strlen(Dbd_dir) - 1);
     strncpy(Data_dir, DEF_TYPHOON_DIR, (sizeof Data_dir) - 1);
     strncat(Data_dir, "/data", (sizeof Data_dir) - strlen(Data_dir) - 1);
-    strncpy(Rvj_name, DEF_TYSERV_DIR, (sizeof Rvj_name) - 1);
+    strncpy(Rvj_name, Tyserv_rundir, (sizeof Rvj_name) - 1);
     strncat(Rvj_name, "/journal/rvj.dat", (sizeof Rvj_name) - strlen(Rvj_name) - 1);
-    strncpy(Rbj_name, DEF_TYSERV_DIR, (sizeof Rbj_name) - 1);
+    strncpy(Rbj_name, Tyserv_rundir, (sizeof Rbj_name) - 1);
     strncat(Rbj_name, "/journal/rbj.dat", (sizeof Rbj_name) - strlen(Rbj_name) - 1);
     Safer_sw = DEF_SAFER_SW;
     Debug = DEF_DEBUG;
 
-    if ((fp = fopen("__INITFILE__", "r")) == (FILE *)NULL){
-        fprintf(stderr, "can not open initfile(%-s)\n", "__INITFILE__");
+    strncpy(Conf_file, Tyserv_rundir, (sizeof Conf_file) - 1);
+    strncat(Conf_file, "/conf/tyserv.conf", (sizeof Conf_file) - strlen(Conf_file) - 1);
+
+    if ((fp = fopen(Conf_file, "r")) == (FILE *)NULL){
+        fprintf(stderr, "can not open initfile(%-s)\n", Conf_file);
         exit(1);
     }
 
@@ -438,11 +449,6 @@ int  init_file()
             strncat(Dbd_dir, "/dbd", (sizeof Dbd_dir) - strlen(Dbd_dir) - 1);
             strncpy(Data_dir, buf + strlen("TYPHOON_DIR="), (sizeof Data_dir) - 1);
             strncat(Data_dir, "/data", (sizeof Data_dir) - strlen(Data_dir) - 1);
-        }else if(strncmp(buf, "TYSERV_DIR=", strlen("TYSERV_DIR=")) == 0){
-            strncpy(Rvj_name, buf + strlen("TYSERV_DIR="), (sizeof Rvj_name) - 1);
-            strncat(Rvj_name, "/journal/rvj.dat", (sizeof Rvj_name) - strlen(Rvj_name) - 1);
-            strncpy(Rbj_name, buf + strlen("TYPHOON_DIR="), (sizeof Rbj_name) - 1);
-            strncat(Rbj_name, "/journal/rbj.dat", (sizeof Rbj_name) - strlen(Rbj_name) - 1);
         }else if(strncmp(buf, "SAFER_SW=", strlen("SAFER_SW=")) == 0){
             Safer_sw = atoi(buf + strlen("SAFER_SW="));
         }else if(strncmp(buf, "DEBUG=", strlen("DEBUG=")) == 0){

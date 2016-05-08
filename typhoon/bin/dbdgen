@@ -1,8 +1,5 @@
 #! /bin/sh
-if [ "X${TYPHOON_DIR}" = "X" ]
-then
-    TYPHOON_DIR=/usr/local/typhoon;export TYPHOON_DIR
-fi
+TYPHOON_DIR=${HOME}/typhoon
 #
 if [ "X$1" = "X-h" -o "X$1" = "X--help" ]
 then

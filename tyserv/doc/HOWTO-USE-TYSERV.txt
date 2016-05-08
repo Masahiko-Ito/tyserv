@@ -2,7 +2,7 @@
 
                  Masahiko Ito (m-ito@mbox.kyoto-inet.or.jp)
 
-                               2002.7.1 
+                               2003.2.1 
 
 1. データベース定義サンプル
 
@@ -70,7 +70,7 @@ database typhoondb {
 3. 標準出力へのエキスポート(csv形式への出力)
 
 3.1. 準備
-  $ cd ${TYPHOON_DIR}/dbd; tyexport -g typhoondb
+  $ cd /home/tyserv/typhoon/dbd; tyexport -g typhoondb
   $ cp typhoondb.exp to typhoondb.RECORDNAME.exp
   $ typhoondb.RECORDNAME.exp を編集
 
@@ -82,7 +82,7 @@ database typhoondb {
 4. 標準入力からのインポート(csv形式からの入力)
 
 4.1. 準備
-  $ cd ${TYPHOON_DIR}/dbd; tyimport -g typhoondb
+  $ cd /home/tyserv/typhoon/dbd; tyimport -g typhoondb
   $ cp typhoondb.imp to typhoondb.RECORDNAME.imp
   $ typhoondb.RECORDNAME.imp を編集
 
@@ -97,13 +97,13 @@ database typhoondb {
   再生成しなければなりません。
 
    $ kill -TERM tyservのpid
-   $ cd ${TYSERV_DIR}/src
+   $ cd /home/tyserv/tyserv/src
    必要に応じて Makefile の OBJS マクロを修正
    $ make backup
    $ make src
    $ make
    $ make install
-   $ tyserv &
+   $ /etc/rc.d/rc.tyserv -d /home/tyserv/rundir1
 
 6. tyserv へのアクセスコマンド
 

@@ -270,5 +270,204 @@ sub ty_delete(){
     
     return ($sts1, $sts2);
 }
+#----------------------------------------------------------------------
+#
+# 機能:複数トランザクションの一括開始
+# 引数:port, socket_handle, user_name, password, mode, ...
+# 戻値:status1, status2
+# 例  :($status1, $status2) = ty_start_trans($port1, $handle1, "user1", "hogehoge1", ""
+#                                            $port2, $handle2, "user2", "hogehoge2", "");
+# mode : start_tran   に対応 : "",   "update",   "io",    "w",   "a",   "read_write"
+#        start_tran_njに対応 : "nj", "updatenj", "ionj",  "wnj", "anj", "read_writenj"
+#        start_tranm  に対応 : "m",  "read",     "input", "r",   "r",   "read_only"
+#
+sub ty_start_trans(){
+    my (@parm) = @_;
+    my ($port, %handle, %user, %passwd, %mode);
+    my ($response, $sts1, $sts2, $i, $handle_tmp);
+
+    $i = 0;
+    while ($parm[$i] ne ""){
+        $handle{$parm[$i]} = $parm[$i + 1];
+        $user{$parm[$i]} = $parm[$i + 2];
+        $passwd{$parm[$i]} = $parm[$i + 3];
+        $mode{$parm[$i]} = $parm[$i + 4];
+        $i += 5;
+    }
+
+    foreach $port (sort keys %handle){
+        $handle_tmp = $handle{$port};
+        if ($mode{$port} eq "" ||
+            $mode{$port} eq "update" || $mode{$port} eq "UPDATE" ||
+            $mode{$port} eq "io" || $mode{$port} eq "IO" ||
+            $mode{$port} eq "w" || $mode{$port} eq "W" ||
+            $mode{$port} eq "a" || $mode{$port} eq "A" ||
+            $mode{$port} eq "read_write" || $mode{$port} eq "READ_WRITE"){
+            printf($handle_tmp "start_tran\t$user{$port}\t$passwd{$port}\n");
+        }elsif ($mode{$port} eq "nj" || $mode{$port} eq "NJ" ||
+                $mode{$port} eq "updatenj" || $mode{$port} eq "UPDATENJ" ||
+                $mode{$port} eq "ionj" || $mode{$port} eq "IONJ" ||
+                $mode{$port} eq "wnj" || $mode{$port} eq "WNJ" ||
+                $mode{$port} eq "anj" || $mode{$port} eq "ANJ" ||
+                $mode{$port} eq "read_writenj" || $mode{$port} eq "READ_WRITENJ"){
+            printf($handle_tmp "start_tran_nj\t$user{$port}\t$passwd{$port}\n");
+        }elsif ($mode{$port} eq "m" || $mode{$port} eq "M" ||
+                $mode{$port} eq "read" || $mode{$port} eq "READ" ||
+                $mode{$port} eq "input" || $mode{$port} eq "INPUT" ||
+                $mode{$port} eq "r" || $mode{$port} eq "R" ||
+                $mode{$port} eq "r" || $mode{$port} eq "R" ||
+                $mode{$port} eq "read_only" || $mode{$port} eq "READ_ONLY"){
+            printf($handle_tmp "start_tranm\t$user{$port}\t$passwd{$port}\n");
+        }else{
+            ($sts1, $sts2) = ("NG", "UNKNOWN TRANSACTION MODE($mode{$port})");
+            return ($sts1, $sts2);
+        }
+        $response = <$handle_tmp>;
+        chop $response;
+        ($sts1, $sts2) = split(/\t/, $response, 2);
+        if ($sts1 eq "NG"){
+            return ($sts1, $sts2);
+        }
+    }
+    
+    return ($sts1, $sts2);
+}
+#
+# 機能:複数トランザクション一括終了(トランザクションの確定)
+# 引数:port, socket_handle, user_name, password, mode, ...
+# 戻値:status1, status2
+# 例  :($status1, $status2) = ty_end_trans($port1, $handle1, "user1", "hogehoge1", ""
+#                                          $port2, $handle2, "user2", "hogehoge2", "");
+#
+sub ty_end_trans(){
+    my (@parm) = @_;
+    my ($port, %handle, %user, %passwd, %mode);
+    my ($response, $sts1, $sts2, $i, $handle_tmp);
+
+    $i = 0;
+    while ($parm[$i] ne ""){
+        $handle{$parm[$i]} = $parm[$i + 1];
+        $user{$parm[$i]} = $parm[$i + 2];
+        $passwd{$parm[$i]} = $parm[$i + 3];
+        $mode{$parm[$i]} = $parm[$i + 4];
+        $i += 5;
+    }
+
+    foreach $port (sort keys %handle){
+        $handle_tmp = $handle{$port};
+        printf($handle_tmp "end_tran\n");
+        $response = <$handle_tmp>;
+        chop $response;
+        ($sts1, $sts2) = split(/\t/, $response, 2);
+        if ($sts1 eq "NG"){
+            return ($sts1, $sts2);
+        }
+    }
+
+    return ($sts1, $sts2);
+}
+#
+# 機能:複数トランザクション一括終了(ロールバック実行)
+# 引数:port, socket_handle, user_name, password, mode, ...
+# 戻値:status1, status2
+# 例  :($status1, $status2) = ty_abort_trans($port1, $handle1, "user1", "hogehoge1", ""
+#                                            $port2, $handle2, "user2", "hogehoge2", "");
+#
+sub ty_abort_trans(){
+    my (@parm) = @_;
+    my ($port, %handle, %user, %passwd, %mode);
+    my ($response, $sts1, $sts2, $i, $handle_tmp);
+
+    $i = 0;
+    while ($parm[$i] ne ""){
+        $handle{$parm[$i]} = $parm[$i + 1];
+        $user{$parm[$i]} = $parm[$i + 2];
+        $passwd{$parm[$i]} = $parm[$i + 3];
+        $mode{$parm[$i]} = $parm[$i + 4];
+        $i += 5;
+    }
+
+    foreach $port (sort keys %handle){
+        $handle_tmp = $handle{$port};
+        printf($handle_tmp "abort_tran\n");
+        $response = <$handle_tmp>;
+        chop $response;
+        ($sts1, $sts2) = split(/\t/, $response, 2);
+        if ($sts1 eq "NG"){
+            return ($sts1, $sts2);
+        }
+    }
+
+    return ($sts1, $sts2);
+}
+#
+# 機能:複数コミット一括実行
+# 引数:port, socket_handle, user_name, password, mode, ...
+# 戻値:status1, status2
+# 例  :($status1, $status2) = ty_commits($port1, $handle1, "user1", "hogehoge1", ""
+#                                        $port2, $handle2, "user2", "hogehoge2", "");
+#
+sub ty_commits(){
+    my (@parm) = @_;
+    my ($port, %handle, %user, %passwd, %mode);
+    my ($response, $sts1, $sts2, $i, $handle_tmp);
+
+    $i = 0;
+    while ($parm[$i] ne ""){
+        $handle{$parm[$i]} = $parm[$i + 1];
+        $user{$parm[$i]} = $parm[$i + 2];
+        $passwd{$parm[$i]} = $parm[$i + 3];
+        $mode{$parm[$i]} = $parm[$i + 4];
+        $i += 5;
+    }
+
+    foreach $port (sort keys %handle){
+        $handle_tmp = $handle{$port};
+        printf($handle_tmp "commit\n");
+        $response = <$handle_tmp>;
+        chop $response;
+        ($sts1, $sts2) = split(/\t/, $response, 2);
+        if ($sts1 eq "NG"){
+            return ($sts1, $sts2);
+        }
+    }
+
+    return ($sts1, $sts2);
+}
+#
+# 機能:複数ロールバック一括実行
+# 引数:port, socket_handle, user_name, password, mode, ...
+# 戻値:status1, status2
+# 例  :($status1, $status2) = ty_rollbacks($port1, $handle1, "user1", "hogehoge1", ""
+#                                          $port2, $handle2, "user2", "hogehoge2", "");
+#
+sub ty_rollbacks(){
+    my (@parm) = @_;
+    my ($port, %handle, %user, %passwd, %mode);
+    my ($response, $sts1, $sts2, $i, $handle_tmp);
+
+    $i = 0;
+    while ($parm[$i] ne ""){
+        $handle{$parm[$i]} = $parm[$i + 1];
+        $user{$parm[$i]} = $parm[$i + 2];
+        $passwd{$parm[$i]} = $parm[$i + 3];
+        $mode{$parm[$i]} = $parm[$i + 4];
+        $i += 5;
+    }
+
+    foreach $port (sort keys %handle){
+        $handle_tmp = $handle{$port};
+        printf($handle_tmp "rollback\n");
+        $response = <$handle_tmp>;
+        chop $response;
+        ($sts1, $sts2) = split(/\t/, $response, 2);
+        if ($sts1 eq "NG"){
+            return ($sts1, $sts2);
+        }
+    }
+
+    return ($sts1, $sts2);
+}
+#----------------------------------------------------------------------
 
 1;

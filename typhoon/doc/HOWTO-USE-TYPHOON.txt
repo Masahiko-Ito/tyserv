@@ -2,7 +2,7 @@
 
                 Masahiko Ito (m-ito@mbox.kyoto-inet.or.jp)
 
-                               2002.7.1
+                               2003.2.1
 
 1. database definition
   ddlp DATABASE -> DATABASE.ddl ---> DATABASE.h
@@ -243,16 +243,16 @@ main()
 
 4. Makefile sample
 
-DEFINES         = -I/usr/local/include -I/home/masa/typhoon/include
+DEFINES         = -I/usr/local/include -I$(HOME)/typhoon/include
 CC              = gcc
 CFLAGS          = -O $(DEFINES) # -v
 LIBS            = -ltyphoon
 LDFLAGS         = -L/usr/local/lib
 SHELL           = /bin/sh
 
-all:	foo.exe
+all:	foo
 
-foo.exe:	foo.c
+foo:	foo.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ foo.c $(LIBS)
 
 5. export tool

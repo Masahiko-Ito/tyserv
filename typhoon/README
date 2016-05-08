@@ -1,13 +1,13 @@
 1. How to generate foodb.dbd
 
-  (1) edit ${TYPHOON_DIR}/ddl/foodb.ddl
+  (1) edit /home/tyserv/typhoon/ddl/foodb.ddl
   (2) $ dbdgen foodb
-  (3) then ${TYPHOON_DIR}/dbd/foodb.dbd, ${TYPHOON_DIR}/include/foodb.h
+  (3) then /home/tyserv/typhoon/dbd/foodb.dbd, /home/tyserv/typhoon/include/foodb.h
       will be made
 
 2. How to export footbl(table) in foodb(database) to stdout
 
-  (1) $ cd ${TYPHOON_DIR}/dbd; please tyexport -g foodb
+  (1) $ cd /home/tyserv/typhoon/dbd; please tyexport -g foodb
   (2) then foodb.exp will be made
   (3) $ cp foodb.exp to foodb.footbl.exp
   (4) $ editor foodb.footbl.exp
@@ -18,7 +18,7 @@
 
 3. How to import footbl(table) in foodb(database) from stdin
 
-  (1) $ cd ${TYPHOON_DIR}/dbd; please tyimport -g foodb
+  (1) $ cd /home/tyserv/typhoon/dbd; please tyimport -g foodb
   (2) then foodb.imp will be made
   (3) $ cp foodb.imp to foodb.footbl.imp
   (4) $ editor foodb.footbl.imp
@@ -27,6 +27,6 @@
 
   (5) $ tyimp foodb footbl
 
----
+-- 
 Masahiko Ito
 m-ito@mbox.kyoto-inet.or.jp

@@ -9,7 +9,7 @@ $user = "manager";
 $passwd = "manager";
 #
 if (@ARGV != 2){
-    printf("usage: $0 host port");
+    printf("usage: $0 host port\n");
     exit 1;
 }
 ($host, $port) = @ARGV;

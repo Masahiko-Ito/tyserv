@@ -1,6 +1,6 @@
-diff -c -r ../typhoon-1.11.0.ORG/Makefile ./Makefile
-*** ../typhoon-1.11.0.ORG/Makefile	Sat Oct  2 12:37:32 1999
---- ./Makefile	Sun Mar  5 22:49:41 2000
+diff -cr typhoon-1.11.0.ORG/Makefile typhoon-1.11.0/Makefile
+*** typhoon-1.11.0.ORG/Makefile	Sat Oct  2 03:37:32 1999
+--- typhoon-1.11.0/Makefile	Mon Jan 20 01:53:31 2003
 ***************
 *** 5,11 ****
   DESTMAN		= $(PREFIX)/man/man$(MANEXT)
@@ -19,9 +19,9 @@ diff -c -r ../typhoon-1.11.0.ORG/Makefile ./Makefile
   SHELL		= /bin/sh
   MAKE		= make
   
-diff -c -r ../typhoon-1.11.0.ORG/configure ./configure
-*** ../typhoon-1.11.0.ORG/configure	Mon Oct  4 13:44:22 1999
---- ./configure	Sun Mar  5 23:01:27 2000
+diff -cr typhoon-1.11.0.ORG/configure typhoon-1.11.0/configure
+*** typhoon-1.11.0.ORG/configure	Mon Oct  4 04:44:22 1999
+--- typhoon-1.11.0/configure	Mon Jan 20 01:53:31 2003
 ***************
 *** 30,36 ****
   compile='$CC $CARGS -o conftest conftest.c >/dev/null 2>&1'
@@ -39,9 +39,10 @@ diff -c -r ../typhoon-1.11.0.ORG/configure ./configure
   ENVIRON_H=./include/environ.h
   ANSI_H=./include/ansi.h
   
-diff -c -r ../typhoon-1.11.0.ORG/examples/Makefile.in ./examples/Makefile.in
-*** ../typhoon-1.11.0.ORG/examples/Makefile.in	Mon Oct  4 08:28:28 1999
---- ./examples/Makefile.in	Sun Mar  5 22:49:41 2000
+Only in typhoon-1.11.0/examples: Makefile
+diff -cr typhoon-1.11.0.ORG/examples/Makefile.in typhoon-1.11.0/examples/Makefile.in
+*** typhoon-1.11.0.ORG/examples/Makefile.in	Sun Oct  3 23:28:28 1999
+--- typhoon-1.11.0/examples/Makefile.in	Mon Jan 20 01:53:31 2003
 ***************
 *** 8,14 ****
   LDFLAGS		= -L../src
@@ -60,9 +61,11 @@ diff -c -r ../typhoon-1.11.0.ORG/examples/Makefile.in ./examples/Makefile.in
   SHELL		= /bin/sh
   PROGRAM		= demo
   SRCS		= demo.c
-diff -c -r ../typhoon-1.11.0.ORG/man/Makefile ./man/Makefile
-*** ../typhoon-1.11.0.ORG/man/Makefile	Sat Oct  2 12:38:13 1999
---- ./man/Makefile	Sun Mar  5 22:49:41 2000
+Only in typhoon-1.11.0/include: ansi.h
+Only in typhoon-1.11.0/include: environ.h
+diff -cr typhoon-1.11.0.ORG/man/Makefile typhoon-1.11.0/man/Makefile
+*** typhoon-1.11.0.ORG/man/Makefile	Sat Oct  2 03:38:13 1999
+--- typhoon-1.11.0/man/Makefile	Mon Jan 20 01:53:31 2003
 ***************
 *** 7,13 ****
   DESTMAN		= $(PREFIX)/man/man$(MANEXT)
@@ -122,9 +125,10 @@ diff -c -r ../typhoon-1.11.0.ORG/man/Makefile ./man/Makefile
   
   uninstall:
   		-for manpage in $(MANPAGES); do \
-diff -c -r ../typhoon-1.11.0.ORG/src/Makefile.in ./src/Makefile.in
-*** ../typhoon-1.11.0.ORG/src/Makefile.in	Mon Oct  4 08:28:28 1999
---- ./src/Makefile.in	Sun Mar  5 22:49:41 2000
+Only in typhoon-1.11.0/src: Makefile
+diff -cr typhoon-1.11.0.ORG/src/Makefile.in typhoon-1.11.0/src/Makefile.in
+*** typhoon-1.11.0.ORG/src/Makefile.in	Sun Oct  3 23:28:28 1999
+--- typhoon-1.11.0/src/Makefile.in	Mon Jan 20 01:53:31 2003
 ***************
 *** 8,14 ****
   DESTLIB		= $(PREFIX)/lib
@@ -143,9 +147,30 @@ diff -c -r ../typhoon-1.11.0.ORG/src/Makefile.in ./src/Makefile.in
   SHELL		= /bin/sh
   LIBRARY		= libtyphoon.a
   LIBHDRS		= ../include/environ.h ../include/typhoon.h
-diff -c -r ../typhoon-1.11.0.ORG/util/Makefile.in ./util/Makefile.in
-*** ../typhoon-1.11.0.ORG/util/Makefile.in	Mon Oct  4 08:28:29 1999
---- ./util/Makefile.in	Sun Mar  5 22:49:41 2000
+diff -cr typhoon-1.11.0.ORG/src/unix.c typhoon-1.11.0/src/unix.c
+*** typhoon-1.11.0.ORG/src/unix.c	Mon Oct  4 04:39:42 1999
+--- typhoon-1.11.0/src/unix.c	Mon Jan 20 01:55:20 2003
+***************
+*** 152,158 ****
+  
+      while (fcntl(lock_fh, F_SETLK, &flk) == -1)
+  	{
+! 		if (errno != EINTR)
+  		{
+  			printf("ty_lock failed (errno %d, lock_fh %d)\n", errno, lock_fh);
+  			break;
+--- 152,158 ----
+  
+      while (fcntl(lock_fh, F_SETLK, &flk) == -1)
+  	{
+! 		if (errno != EINTR && errno != EAGAIN )
+  		{
+  			printf("ty_lock failed (errno %d, lock_fh %d)\n", errno, lock_fh);
+  			break;
+Only in typhoon-1.11.0/util: Makefile
+diff -cr typhoon-1.11.0.ORG/util/Makefile.in typhoon-1.11.0/util/Makefile.in
+*** typhoon-1.11.0.ORG/util/Makefile.in	Sun Oct  3 23:28:29 1999
+--- typhoon-1.11.0/util/Makefile.in	Mon Jan 20 01:53:31 2003
 ***************
 *** 10,16 ****
   LDFLAGS		= -L../src
@@ -181,9 +206,9 @@ diff -c -r ../typhoon-1.11.0.ORG/util/Makefile.in ./util/Makefile.in
   		cd $(DESTBIN) && strip $(PROGRAMS)
   		cd $(DESTBIN) && chmod 755 $(PROGRAMS)
   		cd $(DESTBIN) && chown $(DESTOWN) $(PROGRAMS)
-diff -c -r ../typhoon-1.11.0.ORG/util/export.c ./util/export.c
-*** ../typhoon-1.11.0.ORG/util/export.c	Mon Oct  4 13:11:31 1999
---- ./util/export.c	Sun Mar  5 22:57:45 2000
+diff -cr typhoon-1.11.0.ORG/util/export.c typhoon-1.11.0/util/export.c
+*** typhoon-1.11.0.ORG/util/export.c	Mon Oct  4 04:11:31 1999
+--- typhoon-1.11.0/util/export.c	Mon Jan 20 01:53:31 2003
 ***************
 *** 74,85 ****
 --- 74,99 ----
@@ -251,9 +276,9 @@ diff -c -r ../typhoon-1.11.0.ORG/util/export.c ./util/export.c
   				case 'f':
   					d_dbfpath(argv[i]+2);
   					break;
-diff -c -r ../typhoon-1.11.0.ORG/util/import.c ./util/import.c
-*** ../typhoon-1.11.0.ORG/util/import.c	Mon Oct  4 13:11:32 1999
---- ./util/import.c	Sun Mar  5 23:00:09 2000
+diff -cr typhoon-1.11.0.ORG/util/import.c typhoon-1.11.0/util/import.c
+*** typhoon-1.11.0.ORG/util/import.c	Mon Oct  4 04:11:32 1999
+--- typhoon-1.11.0/util/import.c	Mon Jan 20 01:53:31 2003
 ***************
 *** 79,89 ****
 --- 79,102 ----
