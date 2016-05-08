@@ -18,3 +18,8 @@
                   tyrecover.shで最終のcommit又はend_tranまでデータ復旧するのを
                   デフォルトとし、-f|--forceオプション指定時に強制的にリカバリ
                   ジャーナルの最終までデータ復旧するようにした
+2.4  : 2003.12.01 READMEのtelnet接続例の誤りを修正.
+                  FreeBSDでコンパイル出来なくなっていたのを修正(O_SYNC -> O_FSYNC)
+                  tyrollback.shのTACを自動で設定するように修正
+                  strncpy(),strncat()でNULLターミネートしてない可能性が有った箇所を修正
+                  トランザクションをバッチで実行するコマンド tytran.sh を追加

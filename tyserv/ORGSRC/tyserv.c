@@ -33,6 +33,7 @@ int deny_severity = LOG_WARNING;
 /* DataBase definition */
 #define  DATABASE_NAME "typhoondb"
 #include "typhoondb.h"
+#include "tylocal.h"
 
 #define BUF_LEN (1024 * 16)
 #define PATH_LEN (256)
@@ -194,6 +195,7 @@ int main(argc, argv)
         exit(1);
     }
 
+    Tyserv_rundir[(sizeof Tyserv_rundir) - 1] = '\0';
     if (argv[1][0] == '\0'){
         strncpy(Tyserv_rundir, DEF_TYSERV_RUNDIR, (sizeof Tyserv_rundir) - 1);
     }else{
@@ -254,7 +256,8 @@ int main(argc, argv)
     access_allow = FALSE;
     bzero(In_buf, BUF_LEN);
     if (S_sock >= 0){
-        strncpy((char *)ipstr, (char *)inet_ntoa(caddr.sin_addr), 16);
+        ipstr[(sizeof ipstr) - 1] = '\0';
+        strncpy((char *)ipstr, (char *)inet_ntoa(caddr.sin_addr), (sizeof ipstr) - 1);
         if (hosts_ctl(Daemon_name, STRING_UNKNOWN, ipstr, STRING_UNKNOWN)){
             ret = sock_read(S_sock, In_buf, BUF_LEN);
             access_allow = TRUE;
@@ -450,6 +453,7 @@ int main(argc, argv)
                    strncmp(In_buf, "abort_tran", strlen("abort_tran")) != 0 &&
                    strncmp(In_buf, "ABORT_TRAN", strlen("ABORT_TRAN")) != 0){
 
+                In_buf_rvj[(sizeof In_buf_rvj) - 1] = '\0';
                 strncpy(In_buf_rvj, In_buf, (sizeof In_buf_rvj) - 1);
 
                 get_func_rec(In_buf);
@@ -669,6 +673,7 @@ int main(argc, argv)
                 time(&ltime);
                 today = localtime(&ltime);
                 strftime(time_buf, sizeof time_buf, ".%Y%m%d.%H%M%S", today);
+                Rvj_name_swap[(sizeof Rvj_name_swap) - 1] = '\0';
                 strncpy(Rvj_name_swap, Rvj_name, (sizeof Rvj_name_swap) - 1);
                 strncat(Rvj_name_swap, time_buf, (sizeof Rvj_name_swap) - strlen(Rvj_name_swap) - 1);
                 if (rename(Rvj_name, Rvj_name_swap) != 0){
@@ -724,7 +729,8 @@ int main(argc, argv)
         access_allow = 0;
         bzero(In_buf, BUF_LEN);
         if (S_sock >= 0){
-            strncpy((char *)ipstr, (char *)inet_ntoa(caddr.sin_addr), 16);
+            ipstr[(sizeof ipstr) - 1] = '\0';
+            strncpy((char *)ipstr, (char *)inet_ntoa(caddr.sin_addr), (sizeof ipstr) - 1);
             if (hosts_ctl(Daemon_name, STRING_UNKNOWN, ipstr, STRING_UNKNOWN)){
                 ret = sock_read(S_sock, In_buf, BUF_LEN);
                 access_allow = 1;
@@ -825,7 +831,8 @@ int get_func_rec(buf)
     *p2 = '\0';
 
     if (Table_list[0] != '\0'){
-        strncpy(Table_name, "\t", (sizeof Dbd_dir) - 1);
+        Table_name[(sizeof Table_name) - 1] = '\0';
+        strncpy(Table_name, "\t", (sizeof Table_name) - 1);
         strncat(Table_name, p1, (sizeof Table_name) - strlen(Table_name) - 1);
         strncat(Table_name, "\t", (sizeof Table_name) - strlen(Table_name) - 1);
         if (strstr(Table_list, Table_name) == (char *)NULL){
@@ -1051,22 +1058,31 @@ int  init_file()
     FILE *fp;
     char buf[BUF_LEN];
 
+    Host_name[(sizeof Host_name) - 1] = '\0';
     strncpy(Host_name, DEF_HOST, (sizeof Host_name) - 1);
     Socket_port = DEF_PORT;
     Socket_wait_queue = DEF_SOCKET_WAIT_QUEUE;
+    Dbd_dir[(sizeof Dbd_dir) - 1] = '\0';
     strncpy(Dbd_dir, DEF_TYPHOON_DIR, (sizeof Dbd_dir) - 1);
     strncat(Dbd_dir, "/dbd", (sizeof Dbd_dir) - strlen(Dbd_dir) - 1);
+    Data_dir[(sizeof Data_dir) - 1] = '\0';
     strncpy(Data_dir, DEF_TYPHOON_DIR, (sizeof Data_dir) - 1);
     strncat(Data_dir, "/data", (sizeof Data_dir) - strlen(Data_dir) - 1);
+    Rvj_name[(sizeof Rvj_name) - 1] = '\0';
     strncpy(Rvj_name, Tyserv_rundir, (sizeof Rvj_name) - 1);
     strncat(Rvj_name, "/journal/rvj.dat", (sizeof Rvj_name) - strlen(Rvj_name) - 1);
+    Rbj_name[(sizeof Rbj_name) - 1] = '\0';
     strncpy(Rbj_name, Tyserv_rundir, (sizeof Rbj_name) - 1);
     strncat(Rbj_name, "/journal/rbj.dat", (sizeof Rbj_name) - strlen(Rbj_name) - 1);
+    Tyserv_dir[(sizeof Tyserv_dir) - 1] = '\0';
     strncpy(Tyserv_dir, DEF_TYSERV_DIR, (sizeof Tyserv_dir) - 1);
+    Rollback_script[(sizeof Rollback_script) - 1] = '\0';
     strncpy(Rollback_script, DEF_TYSERV_DIR, (sizeof Rollback_script) - 1);
     strncat(Rollback_script, "/bin/tyrollback.sh", (sizeof Rollback_script) - strlen(Rollback_script) - 1);
+    Passwd_name[(sizeof Passwd_name) - 1] = '\0';
     strncpy(Passwd_name, DEF_TYSERV_DIR, (sizeof Passwd_name) - 1);
     strncat(Passwd_name, "/etc/passwd", (sizeof Passwd_name) - strlen(Passwd_name) - 1);
+    Daemon_name[(sizeof Daemon_name) - 1] = '\0';
     strncpy(Daemon_name, DEF_DAEMON_NAME, (sizeof Daemon_name) - 1);
     Table_list[0] = '\0';
     Rvj_sw = DEF_RVJ_SW;
@@ -1075,6 +1091,7 @@ int  init_file()
     Rbj_max = DEF_RBJ_MAX;
     Debug = DEF_DEBUG;
 
+    Conf_file[(sizeof Conf_file) - 1] = '\0';
     strncpy(Conf_file, Tyserv_rundir, (sizeof Conf_file) - 1);
     strncat(Conf_file, "/conf/tyserv.conf", (sizeof Conf_file) - strlen(Conf_file) - 1);
 
@@ -1091,25 +1108,33 @@ int  init_file()
             buf[0] = '\0';
         }
         if (strncmp(buf, "HOST_NAME=", strlen("HOST_NAME=")) == 0){
+            Host_name[(sizeof Host_name) - 1] = '\0';
             strncpy(Host_name, buf + strlen("HOST_NAME="), (sizeof Host_name) - 1);
         }else if(strncmp(buf, "SOCKET_PORT=", strlen("SOCKET_PORT=")) == 0){
             Socket_port = atoi(buf + strlen("SOCKET_PORT="));
         }else if(strncmp(buf, "SOCKET_WAIT_QUEUE=", strlen("SOCKET_WAIT_QUEUE=")) == 0){
             Socket_wait_queue = atoi(buf + strlen("SOCKET_WAIT_QUEUE="));
         }else if(strncmp(buf, "TYPHOON_DIR=", strlen("TYPHOON_DIR=")) == 0){
+            Dbd_dir[(sizeof Dbd_dir) - 1] = '\0';
             strncpy(Dbd_dir, buf + strlen("TYPHOON_DIR="), (sizeof Dbd_dir) - 1);
             strncat(Dbd_dir, "/dbd", (sizeof Dbd_dir) - strlen(Dbd_dir) - 1);
+            Data_dir[(sizeof Data_dir) - 1] = '\0';
             strncpy(Data_dir, buf + strlen("TYPHOON_DIR="), (sizeof Data_dir) - 1);
             strncat(Data_dir, "/data", (sizeof Data_dir) - strlen(Data_dir) - 1);
         }else if(strncmp(buf, "TYSERV_DIR=", strlen("TYSERV_DIR=")) == 0){
+            Tyserv_dir[(sizeof Tyserv_dir) - 1] = '\0';
             strncpy(Tyserv_dir, buf + strlen("TYSERV_DIR="), (sizeof Tyserv_dir) - 1);
+            Rollback_script[(sizeof Rollback_script) - 1] = '\0';
             strncpy(Rollback_script, Tyserv_dir, (sizeof Rollback_script) - 1);
             strncat(Rollback_script, "/bin/tyrollback.sh", (sizeof Rollback_script) - strlen(Rollback_script) - 1);
+            Passwd_name[(sizeof Passwd_name) - 1] = '\0';
             strncpy(Passwd_name, Tyserv_dir, (sizeof Passwd_name) - 1);
             strncat(Passwd_name, "/etc/passwd", (sizeof Passwd_name) - strlen(Passwd_name) - 1);
         }else if(strncmp(buf, "DAEMON_NAME=", strlen("DAEMON_NAME=")) == 0){
+            Daemon_name[(sizeof Daemon_name) - 1] = '\0';
             strncpy(Daemon_name, buf + strlen("DAEMON_NAME="), (sizeof Daemon_name) - 1);
         }else if(strncmp(buf, "TABLE_LIST=", strlen("TABLE_LIST=")) == 0){
+            Table_list[(sizeof Table_list) - 1] = '\0';
             strncat(Table_list, "\t", (sizeof Table_list) - 1);
             strncat(Table_list, buf + strlen("TABLE_LIST="), (sizeof Table_list) - strlen(Table_list) - 1);
         }else if(strncmp(buf, "RVJ_SW=", strlen("RVJ_SW=")) == 0){
@@ -1126,6 +1151,7 @@ int  init_file()
     }
 
     if (Table_list[0] != '\0'){
+        Table_list[(sizeof Table_list) - 1] = '\0';
         strncat(Table_list, "\t", (sizeof Table_list) - strlen(Table_list) - 1);
     }
 
@@ -1173,6 +1199,7 @@ int  init_file_sig()
             buf[0] = '\0';
         }
         if(strncmp(buf, "TABLE_LIST=", strlen("TABLE_LIST=")) == 0){
+            Table_list[(sizeof Table_list) - 1] = '\0';
             strncat(Table_list, "\t", (sizeof Table_list) - 1);
             strncat(Table_list, buf + strlen("TABLE_LIST="), (sizeof Table_list) - strlen(Table_list) - 1);
         }else if(strncmp(buf, "RVJ_SW=", strlen("RVJ_SW=")) == 0){
@@ -1189,6 +1216,7 @@ int  init_file_sig()
     }
 
     if (Table_list[0] != '\0'){
+        Table_list[(sizeof Table_list) - 1] = '\0';
         strncat(Table_list, "\t", (sizeof Table_list) - strlen(Table_list) - 1);
     }
 

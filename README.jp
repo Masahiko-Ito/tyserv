@@ -1,4 +1,4 @@
-tyserv-2.3 -- database server which use typhoon RDBMS as database engine
+tyserv-2.4 -- database server which use typhoon RDBMS as database engine
 Copyright (C) 2003  Masahiko Ito
 
 These programs is free software; you can redistribute it and/or modify
@@ -59,14 +59,13 @@ C-ISAM」等の言葉に反応してしまうそこのあなたにこそ「tyserv」は有るの
 ダウンロード
 ============
 
-http://myh.no-ip.org/~tyserv/tyserv-2.3.tar.gz
+http://myh.no-ip.org/~tyserv/tyserv-2.4.tar.gz
 
-  1. リカバリジャーナルのスワップ機能を追加.
-  2. tyserv.plにty_shutdown(),ty_swaprvj()を追加.
-  3. COMMIT,END_TRAN時のリカバリジャーナル出力件数制限チェック洩れ修正
-  4. open-cobolからのアクセスサンプルプログラムを追加
-  5. tyrecover.shのデフォルトの動作を最終のcommit又はend_tran実行時まで
-     データ復旧するように修正した
+  1. READMEのtelnet接続例の誤りを修正.
+  2. FreeBSDでコンパイル出来なくなっていたのを修正(O_SYNC -> O_FSYNC)
+  3. tyrollback.shのTACを自動で設定するように修正
+  4. strncpy(),strncat()でNULLターミネートしてない可能性が有った箇所を修正
+  5. トランザクションをバッチで実行するコマンド tytran.sh を追加
 
 インストール
 ============
@@ -74,11 +73,11 @@ http://myh.no-ip.org/~tyserv/tyserv-2.3.tar.gz
  1. システムにユーザ tyserv を追加する
  2. ユーザ tyserv 用にホームディレクトリ /home/tyserv を作成する
  3. tyserv でログインする
- 4. tyserv-2.3 を展開する
-     □ $ tar xvzf tyserv-2.3.tar.gz
-     □ $ cp -fr tyserv-2.3/typhoon ~/
-     □ $ cp -fr tyserv-2.3/tyserv ~/
-     □ $ cp -fr tyserv-2.3/rundir1 ~/
+ 4. tyserv-2.4 を展開する
+     □ $ tar xvzf tyserv-2.4.tar.gz
+     □ $ cp -fr tyserv-2.4/typhoon ~/
+     □ $ cp -fr tyserv-2.4/tyserv ~/
+     □ $ cp -fr tyserv-2.4/rundir1 ~/
  5. PATH に ${HOME}/typhoon/bin, ${HOME}/tyserv/bin を追加する
         ex. (/home/tyserv/.profile etc)
      □ PATH="${PATH}:${HOME}/typhoon/bin"
@@ -89,7 +88,7 @@ http://myh.no-ip.org/~tyserv/tyserv-2.3.tar.gz
      □ typhoon-1.11.0.tar.gz を取得する
         http://users.footprints.net/~kaz/typhoon.html
      □ $ tar xvzf typhoon-1.11.0.tar.gz
-     □ $ cd typhoon-1.11.0; patch -p1 <../tyserv-2.3/
+     □ $ cd typhoon-1.11.0; patch -p1 <../tyserv-2.4/
         typhoon-1.11.0.patch
      □ $ ./configure; make
      □ $ su
@@ -151,6 +150,10 @@ http://myh.no-ip.org/~tyserv/tyserv-2.3.tar.gz
          ☆ full : データベースの参照、更新ができる。
          ☆ get : データベースの参照ができる。
      □ /etc/hosts.allow, /etc/hosts.deny を適切に設定する
+19. トランザクションのバッチ実行ツール(tytran.sh)インストール
+     □ $ cd /home/tyserv/tyserv/tool
+     □ $ make
+     □ $ make install
 
 コンフィグファイル(/home/tyserv/rundir1/conf/tyserv.conf)のパラメータ
 =====================================================================
@@ -196,9 +199,9 @@ http://myh.no-ip.org/~tyserv/tyserv-2.3.tar.gz
  ・ RVJ_MAX=1000000
     サーバ起動中のリカバリジャーナル出力件数の最大値を指定する。
     リカバリジャーナル出力件数がこの指定件数を越えるとそれ以降の更新
-    処理はサーバを再起動するまで失敗する。また、ロールバック処理中に
-    リカバリジャーナル出力件数がこの指定件数を越えるとサーバはロール
-    バックを放棄してクラッシュする。
+    処理はサーバを再起動するかSWAPRVJを実行するまで失敗する。また、
+    ロールバック処理中にリカバリジャーナル出力件数がこの指定件数を越
+    えるとサーバはロールバックを放棄してクラッシュする。
     RVJ_MAX は RBJ_MAX に比べて十分大きな値にすることが望ましい。
 
     RVJ_MAX, RBJ_MAX は設計ミス、バグ等によりジャーナルがディスク領域
@@ -286,33 +289,35 @@ $ telnet localhost 20000
 Trying 127.0.0.1...
 Connected to localhost.
 Escape character is '^]'.
-start_tran      user    user                            <-Input
-OK      TRANSACTION START                               <-Response
-put     smp1    id=1111 name=Taro       salary=150000   <-Input
-OK      INSERTED                                        <-Response
-put     smp1    id=2222 name=Jiro       salary=200000   <-Input
-OK      INSERTED                                        <-Response
-put     smp1    id=3333 name=Goro       salary=250000   <-Input
-OK      INSERTED                                        <-Response
-get     smp1    pkey    eq      1111                    <-Input
-OK      FOUND   id=1111 name=Taro       salary=150000   <-Response
-getnext smp1    pkey                                    <-Input
-OK      FOUND   id=2222 name=Jiro       salary=200000   <-Response
-getnext smp1    pkey                                    <-Input
-OK      FOUND   id=3333 name=Goro       salary=250000   <-Response
-update  smp1    2222    name=Jirorin                    <-Input
-OK      UPDATED                                         <-Response
-get     smp1    pkey    eq      2222                    <-Input
-OK      FOUND   id=2222 name=Jirorin    salary=250000   <-Response
-delete  smp1    2222                                    <-Input
-OK      DELETED                                         <-Response
-get     smp1    pkey    eq      2222                    <-Input
-NG      NOTFOUND                                        <-Response
-rollback                                                <-Input
-OK      ROLLBACKED                                      <-Response
-get     smp1    pkey    eq      2222                    <-Input
-OK      FOUND   id=2222 name=Jirorin    salary=250000   <-Response
-end_tran                                                <-Input
+start_tran	user	user				<-Input
+OK	TRANSACTION	START				<-Response
+put	smp1	id=1111	name=Taro	salary=150000	<-Input
+OK	INSERTED					<-Response
+put	smp1	id=2222	name=Jiro	salary=200000	<-Input
+OK	INSERTED					<-Response
+put	smp1	id=3333	name=Goro	salary=250000	<-Input
+OK	INSERTED					<-Response
+commit							<-Input
+OK	COMMITED					<-Response
+get	smp1	pkey	eq	1111			<-Input
+OK	FOUND	id=1111	name=Taro	salary=150000	<-Response
+getnext	smp1	pkey					<-Input
+OK	FOUND	id=2222	name=Jiro	salary=200000	<-Response
+getnext	smp1	pkey					<-Input
+OK	FOUND	id=3333	name=Goro	salary=250000	<-Response
+update	smp1	2222	name=Jirorin			<-Input
+OK	UPDATED						<-Response
+get	smp1	pkey	eq	2222			<-Input
+OK	FOUND	id=2222	name=Jirorin	salary=200000	<-Response
+delete	smp1	2222					<-Input
+OK	DELETED						<-Response
+get	smp1	pkey	eq	2222			<-Input
+NG	NOTFOUND					<-Response
+rollback						<-Input
+OK	ROLLBACKED					<-Response
+get	smp1	pkey	eq	2222			<-Input
+OK	FOUND	id=2222	name=Jiro	salary=200000	<-Response
+end_tran						<-Input
 OK      TRANSACTION END                                 <-Response
 Connection closed by foreign host.
 
@@ -898,7 +903,7 @@ tyservは排他の単位がデータベースなので、排他モードのトランザクション
 ることで共有そのものを避ける方法で排他制御を行っている(というか行わず
 にすましてるというか...)為にしかたのないことです(^^;。
 
-そこでtyserv-2.3ではデータベースに含まれるテーブルを幾つかのグループ
+そこでtyserv-2.4ではデータベースに含まれるテーブルを幾つかのグループ
 に分けて、そのグループ毎に別々のサーバを起動することで排他の粒度を細
 かくできるように拡張を行いました。
 
@@ -951,7 +956,7 @@ tyservは排他の単位がデータベースなので、排他モードのトランザクション
      □ ty_rollbacks(@tran_param)
  ・ サンプルスクリプトの動かし方(perl版)
      □ $ cd /home/tyserv
-     □ $ cp -fr tyserv-2.3/rundir2 ~/
+     □ $ cp -fr tyserv-2.4/rundir2 ~/
      □ $ /etc/rc.d/rc.tyserv -d /home/tyserv/rundir2
      □ $ cd /home/tyserv/tyserv/sample/perl
      □ $ ./sample3.pl localhost 20000 update 20001 update
@@ -977,6 +982,37 @@ OK      FOUND   id=0004 name=Masaharu Sawada    salary=0470000
 OK      FOUND   id=0005 name=Masahiko Ito       salary=0300000
 $
 
+tytran.sh(トランザクションバッチ実行ツール)実行例
+=================================================
+
+シェルからトランザクションを実行するためのツールを提供します。本コマンド
+はトランザクション管理の範囲内で動作しますので、サーバ起動中でないと実行
+出来ません。また、バッチ処理という性質上、長時間のデータ更新の場合データ
+ベースを排他的に占有する時間も長くなるので、必要に応じてEND_TRANを発行し
+てトランザクションを分割し、小まめに排他を開放することをお勧めします。
+
+本コマンドはユーザ tyserv 以外でも実行できます。
+
+$ tytran.sh -h  <-- ヘルプの表示
+usage : tytran.sh [-s server|--server server] [-p port|--port port] [-n|-ngexit] [-v|--verbose]
+ execute transaction in batch mode
+ option : -s server       connect to server. default localhost.
+          -p port         connect to port. default 20000.
+          -n, --ngexit    exit when NG status
+          -v, --verbose   verbose mode
+
+$ vi trancmd.txt
+#
+# 先頭が `#' はコメント行
+#
+START_TRAN	USER	USER
+GET	smp1	pkey	eq	0001
+UPDATE	smp1	0001	salary=9999999
+COMMIT
+END_TRAN
+
+$ tytran.sh <trancmd.txt
+
 Cygwin 対応
 ===========
 
@@ -994,9 +1030,7 @@ FreeBSD 対応
 
 typhoon-1.11.0.patch の代わりに typhoon-1.11.0.FreeBSD.patch を利用する
 事でFreeBSD環境でtyservを利用することが出来ます。その際には、tyservの
-Makefile中のLIBSマクロに -lcompat を追加してください。また、tacコマンド
-がインストールされていない場合は tyrollback.sh スクリプト中の TACシェル
-変数を tac.sh を使うように修正してください。
+Makefile中のLIBSマクロに -lcompat を追加してください。
 
 TODO & BUGS
 ===========

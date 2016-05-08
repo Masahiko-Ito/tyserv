@@ -37,6 +37,8 @@ sort |\
 uniq |\
 ${TYSERV_DIR}/bin/mksrc3.pl >tyserv.h
 #
+cp ${TYSERV_DIR}/ORGSRC/tylocal.h tylocal.h
+#
 sed -e 's/__MESSAGE__/!! DO NOT EDIT THIS SOURCE. THIS IS GENERATED AUTOMATICALY !!/g' \
     ${TYSERV_DIR}/ORGSRC/tyserv.c >tyserv.c
 #

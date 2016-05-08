@@ -4,13 +4,18 @@ DEF_TYSERV_DIR=/home/tyserv/tyserv
 DEF_TYSERV_RUNDIR=/home/tyserv/rundir1
 TYSERV_RUNDIR=${DEF_TYSERV_RUNDIR}
 #
+if [ -x /usr/bin/tac ]
+then
+#
 # for Linux etc
 #
-TAC=/usr/bin/tac
+    TAC=/usr/bin/tac
+else
 #
 # for FreeBSD etc
 #
-#TAC=${DEF_TYSERV_DIR}/bin/tac.sh
+    TAC=${DEF_TYSERV_DIR}/bin/tac.sh
+fi
 #
 if [ X"$1" = "X-h" -o X"$1" = "X--help" ]
 then

@@ -21,6 +21,7 @@
 /* DataBase definition */
 #define  DATABASE_NAME "typhoondb"
 #include "typhoondb.h"
+#include "tylocal.h"
 
 #define FD_STDIN (0)
 #define BUF_LEN (1024 * 16)
@@ -106,6 +107,7 @@ int main(argc, argv)
         exit(1);
     }
 
+    Tyserv_rundir[(sizeof Tyserv_rundir) - 1] = '\0';
     if (argv[2][0] == '\0'){
         strncpy(Tyserv_rundir, DEF_TYSERV_DIR, (sizeof Tyserv_rundir) - 1);
     }else{
@@ -157,6 +159,7 @@ int main(argc, argv)
  */
     while (fgets(In_buf, sizeof In_buf, stdin) != (char *)NULL){
 
+        In_buf_rvj[(sizeof In_buf_rvj) - 1] = '\0';
         strncpy(In_buf_rvj, In_buf, (sizeof In_buf_rvj) - 1);
 
         get_func_rec(In_buf);
@@ -418,17 +421,22 @@ int  init_file()
     FILE *fp;
     char buf[BUF_LEN];
 
+    Dbd_dir[(sizeof Dbd_dir) - 1] = '\0';
     strncpy(Dbd_dir, DEF_TYPHOON_DIR, (sizeof Dbd_dir) - 1);
     strncat(Dbd_dir, "/dbd", (sizeof Dbd_dir) - strlen(Dbd_dir) - 1);
+    Data_dir[(sizeof Data_dir) - 1] = '\0';
     strncpy(Data_dir, DEF_TYPHOON_DIR, (sizeof Data_dir) - 1);
     strncat(Data_dir, "/data", (sizeof Data_dir) - strlen(Data_dir) - 1);
+    Rvj_name[(sizeof Rvj_name) - 1] = '\0';
     strncpy(Rvj_name, Tyserv_rundir, (sizeof Rvj_name) - 1);
     strncat(Rvj_name, "/journal/rvj.dat", (sizeof Rvj_name) - strlen(Rvj_name) - 1);
+    Rbj_name[(sizeof Rbj_name) - 1] = '\0';
     strncpy(Rbj_name, Tyserv_rundir, (sizeof Rbj_name) - 1);
     strncat(Rbj_name, "/journal/rbj.dat", (sizeof Rbj_name) - strlen(Rbj_name) - 1);
     Safer_sw = DEF_SAFER_SW;
     Debug = DEF_DEBUG;
 
+    Conf_file[(sizeof Conf_file) - 1] = '\0';
     strncpy(Conf_file, Tyserv_rundir, (sizeof Conf_file) - 1);
     strncat(Conf_file, "/conf/tyserv.conf", (sizeof Conf_file) - strlen(Conf_file) - 1);
 
@@ -445,8 +453,10 @@ int  init_file()
             buf[0] = '\0';
         }
         if(strncmp(buf, "TYPHOON_DIR=", strlen("TYPHOON_DIR=")) == 0){
+            Dbd_dir[(sizeof Dbd_dir) - 1] = '\0';
             strncpy(Dbd_dir, buf + strlen("TYPHOON_DIR="), (sizeof Dbd_dir) - 1);
             strncat(Dbd_dir, "/dbd", (sizeof Dbd_dir) - strlen(Dbd_dir) - 1);
+            Data_dir[(sizeof Data_dir) - 1] = '\0';
             strncpy(Data_dir, buf + strlen("TYPHOON_DIR="), (sizeof Data_dir) - 1);
             strncat(Data_dir, "/data", (sizeof Data_dir) - strlen(Data_dir) - 1);
         }else if(strncmp(buf, "SAFER_SW=", strlen("SAFER_SW=")) == 0){

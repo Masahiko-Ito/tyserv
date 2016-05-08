@@ -21,6 +21,7 @@
 /* DataBase definition */
 #define  DATABASE_NAME "typhoondb"
 #include "typhoondb.h"
+#include "tylocal.h"
 
 #define DEF_DBD_DIR  "/home/tyserv/typhoon/dbd"
 #define DEF_DATA_DIR "/home/tyserv/typhoon/data"
@@ -294,6 +295,7 @@ int DB_open()
     /*
      * set dbd dir
      */
+    Dbd_dir[(sizeof Dbd_dir) - 1] = '\0';
     if ((p_env = (char *)getenv("TYPHOON_DIR")) == NULL){
         strncpy(Dbd_dir, DEF_DBD_DIR, (sizeof Dbd_dir) - 1);
     }else{
@@ -305,6 +307,7 @@ int DB_open()
     /*
      * set data dir
      */
+    Data_dir[(sizeof Data_dir) - 1] = '\0';
     if ((p_env = (char *)getenv("TYPHOON_DIR")) == NULL){
         strncpy(Data_dir, DEF_DATA_DIR, (sizeof Data_dir) - 1);
     }else{
