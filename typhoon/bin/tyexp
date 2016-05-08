@@ -1,0 +1,47 @@
+#! /bin/sh
+if [ "X${TYPHOON_DIR}" = "X" ]
+then
+    TYPHOON_DIR=/usr/local/typhoon;export TYPHOON_DIR
+fi
+#
+if [ "X$1" = "X-h" -o "X$1" = "X--help" ]
+then
+    echo "Usage : `basename $0` DATABASE TABLE"
+    exit 0
+fi
+#
+cd ${TYPHOON_DIR}/data
+#
+if [ -f ${TYPHOON_DIR}/dbd/$1.dbd ]
+then
+    cp -f ${TYPHOON_DIR}/dbd/$1.dbd .
+else
+    echo ${TYPHOON_DIR}/dbd/$1.dbd not found.
+    echo please make database $1.
+    exit 1
+fi
+#
+if [ -f ${TYPHOON_DIR}/dbd/$1.$2.exp ]
+then
+    cp -f ${TYPHOON_DIR}/dbd/$1.$2.exp $1.exp
+else
+    echo ${TYPHOON_DIR}/dbd/$1.$2.exp not found.
+    echo please tyexport -g $1 in ${TYPHOON_DIR}/dbd,and
+    echo edit $1.exp to $1.$2.exp
+    exit 1
+fi
+#
+tyexport -s $1 | \
+perl -e '$rec = <STDIN>; # scrap message from tyexport
+while ($rec = <STDIN>){
+    $rec =~ s/\\x(..)/pack("C",hex($1))/eg;
+    print $rec;
+}' |\
+sed -e 's/\\\\/\\/g' \
+    -e 's/^\"//g' \
+    -e 's/\", \"/	/g' \
+    -e 's/\"$//g'
+#
+rm -f ${TYPHOON_DIR}/data/$1.dbd
+rm -f ${TYPHOON_DIR}/data/$1.exp
+

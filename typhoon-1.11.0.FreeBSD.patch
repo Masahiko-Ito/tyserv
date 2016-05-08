@@ -1,0 +1,441 @@
+diff -c -r ../typhoon-1.11.0.ORG/Makefile ./Makefile
+*** ../typhoon-1.11.0.ORG/Makefile	Sat Oct  2 12:37:32 1999
+--- ./Makefile	Tue Mar  7 14:50:57 2000
+***************
+*** 5,11 ****
+  DESTMAN		= $(PREFIX)/man/man$(MANEXT)
+  DESTCAT		= $(PREFIX)/man/cat$(MANEXT)
+  DESTOWN		= root
+! DESTGRP		= local
+  SHELL		= /bin/sh
+  MAKE		= make
+  
+--- 5,12 ----
+  DESTMAN		= $(PREFIX)/man/man$(MANEXT)
+  DESTCAT		= $(PREFIX)/man/cat$(MANEXT)
+  DESTOWN		= root
+! #DESTGRP		= local
+! DESTGRP		= root
+  SHELL		= /bin/sh
+  MAKE		= make
+  
+Only in .: Makefile.orig
+diff -c -r ../typhoon-1.11.0.ORG/configure ./configure
+*** ../typhoon-1.11.0.ORG/configure	Mon Oct  4 13:44:22 1999
+--- ./configure	Tue Mar  7 15:51:54 2000
+***************
+*** 15,21 ****
+  # typhoon uses a mixture of POSIX, BSD and System V interfaces
+  #
+  
+! STANDARDS="-D_POSIX_SOURCE -D_BSD_SOURCE -D_SVID_SOURCE"
+  
+  if type gcc >/dev/null 2>/dev/null ; then
+  	CC=gcc
+--- 15,22 ----
+  # typhoon uses a mixture of POSIX, BSD and System V interfaces
+  #
+  
+! #STANDARDS="-D_POSIX_SOURCE -D_BSD_SOURCE -D_SVID_SOURCE"
+! STANDARDS="-D_BSD_SOURCE -D_SVID_SOURCE"
+  
+  if type gcc >/dev/null 2>/dev/null ; then
+  	CC=gcc
+***************
+*** 30,36 ****
+  compile='$CC $CARGS -o conftest conftest.c >/dev/null 2>&1'
+  compiled_ok='test -s conftest && (./conftest) >/dev/null 2>/dev/null;'
+  
+! DEFS=''	# additional -D compiler defines go here
+  ENVIRON_H=./include/environ.h
+  ANSI_H=./include/ansi.h
+  
+--- 31,37 ----
+  compile='$CC $CARGS -o conftest conftest.c >/dev/null 2>&1'
+  compiled_ok='test -s conftest && (./conftest) >/dev/null 2>/dev/null;'
+  
+! DEFS='-DEXTEND -DFREEBSD'	# additional -D compiler defines go here
+  ENVIRON_H=./include/environ.h
+  ANSI_H=./include/ansi.h
+  
+Only in .: configure.orig
+Only in .: data
+diff -c -r ../typhoon-1.11.0.ORG/examples/Makefile.in ./examples/Makefile.in
+*** ../typhoon-1.11.0.ORG/examples/Makefile.in	Mon Oct  4 08:28:28 1999
+--- ./examples/Makefile.in	Tue Mar  7 17:00:54 2000
+***************
+*** 3,14 ****
+  DEFINES		= -I../include @defs@
+  CC		= @cc@
+  CFLAGS		= @cflags@
+! LIBS		= -ltyphoon
+  PREFIX		= /usr/local
+  LDFLAGS		= -L../src
+  DESTBIN		= $(PREFIX)/bin
+  DESTOWN		= root
+! DESTGRP		= local
+  SHELL		= /bin/sh
+  PROGRAM		= demo
+  SRCS		= demo.c
+--- 3,15 ----
+  DEFINES		= -I../include @defs@
+  CC		= @cc@
+  CFLAGS		= @cflags@
+! LIBS		= -ltyphoon -lcompat
+  PREFIX		= /usr/local
+  LDFLAGS		= -L../src
+  DESTBIN		= $(PREFIX)/bin
+  DESTOWN		= root
+! #DESTGRP		= local
+! DESTGRP		= wheel
+  SHELL		= /bin/sh
+  PROGRAM		= demo
+  SRCS		= demo.c
+Only in ./examples: Makefile.in.orig
+diff -c -r ../typhoon-1.11.0.ORG/man/Makefile ./man/Makefile
+*** ../typhoon-1.11.0.ORG/man/Makefile	Sat Oct  2 12:38:13 1999
+--- ./man/Makefile	Tue Mar  7 14:50:58 2000
+***************
+*** 7,13 ****
+  DESTMAN		= $(PREFIX)/man/man$(MANEXT)
+  DESTCAT		= $(PREFIX)/man/cat$(MANEXT)
+  DESTOWN		= root
+! DESTGRP		= local
+  SHELL		= /bin/sh
+  MANPAGES	= d_close.3 d_crget.3 d_crread.3 d_crset.3 d_dbdpath.3 \
+  		  d_dbfpath.3 d_dbget.3 d_dbset.3 d_delete.3 d_fillnew.3 \
+--- 7,14 ----
+  DESTMAN		= $(PREFIX)/man/man$(MANEXT)
+  DESTCAT		= $(PREFIX)/man/cat$(MANEXT)
+  DESTOWN		= root
+! #DESTGRP		= local
+! DESTGRP		= root
+  SHELL		= /bin/sh
+  MANPAGES	= d_close.3 d_crget.3 d_crread.3 d_crset.3 d_dbdpath.3 \
+  		  d_dbfpath.3 d_dbget.3 d_dbset.3 d_delete.3 d_fillnew.3 \
+***************
+*** 38,55 ****
+  $(CATPAGES):	$(MANPAGES)
+  
+  install:	$(CATPAGES)
+! 		-for manpage in $(MANPAGES); do \
+! 			basepage=`expr $$manpage : '\(.*\)\.[^.]*'`; \
+! :			cp $$manpage $(DESTMAN)/$$basepage.$(MANEXT); \
+! :			chmod 644 $(DESTMAN)/$$basepage.$(MANEXT); \
+! :			chown $(DESTOWN) $(DESTMAN)/$$basepage.$(MANEXT); \
+! :			chgrp $(DESTGRP) $(DESTMAN)/$$basepage.$(MANEXT); \
+! 			compress -c $$basepage.cat \
+! 				>$(DESTCAT)/$$basepage.$(MANEXT).Z; \
+! 			chmod 644 $(DESTCAT)/$$basepage.$(MANEXT)*; \
+! 			chown $(DESTOWN) $(DESTCAT)/$$basepage.$(MANEXT)*; \
+! 			chgrp $(DESTGRP) $(DESTCAT)/$$basepage.$(MANEXT)*; \
+! 		done
+  
+  uninstall:
+  		-for manpage in $(MANPAGES); do \
+--- 39,58 ----
+  $(CATPAGES):	$(MANPAGES)
+  
+  install:	$(CATPAGES)
+! #		-for manpage in $(MANPAGES); do \
+! #			basepage=`expr $$manpage : '\(.*\)\.[^.]*'`; \
+! #:			cp $$manpage $(DESTMAN)/$$basepage.$(MANEXT); \
+! #:			chmod 644 $(DESTMAN)/$$basepage.$(MANEXT); \
+! #:			chown $(DESTOWN) $(DESTMAN)/$$basepage.$(MANEXT); \
+! #:			chgrp $(DESTGRP) $(DESTMAN)/$$basepage.$(MANEXT); \
+! #			compress -c $$basepage.cat \
+! #				>$(DESTCAT)/$$basepage.$(MANEXT).Z; \
+! #			chmod 644 $(DESTCAT)/$$basepage.$(MANEXT)*; \
+! #			chown $(DESTOWN) $(DESTCAT)/$$basepage.$(MANEXT)*; \
+! #			chgrp $(DESTGRP) $(DESTCAT)/$$basepage.$(MANEXT)*; \
+! #		done
+! 	cp d_*.3 $(PREFIX)/man/man3/
+! 	cp ddlp.1 $(PREFIX)/man/man1/
+  
+  uninstall:
+  		-for manpage in $(MANPAGES); do \
+Only in ./man: Makefile.orig
+diff -c -r ../typhoon-1.11.0.ORG/src/Makefile.in ./src/Makefile.in
+*** ../typhoon-1.11.0.ORG/src/Makefile.in	Mon Oct  4 08:28:28 1999
+--- ./src/Makefile.in	Tue Mar  7 17:01:04 2000
+***************
+*** 8,14 ****
+  DESTLIB		= $(PREFIX)/lib
+  DESTHDR		= $(PREFIX)/include
+  DESTOWN		= root
+! DESTGRP		= local
+  SHELL		= /bin/sh
+  LIBRARY		= libtyphoon.a
+  LIBHDRS		= ../include/environ.h ../include/typhoon.h
+--- 8,15 ----
+  DESTLIB		= $(PREFIX)/lib
+  DESTHDR		= $(PREFIX)/include
+  DESTOWN		= root
+! #DESTGRP		= local
+! DESTGRP		= wheel
+  SHELL		= /bin/sh
+  LIBRARY		= libtyphoon.a
+  LIBHDRS		= ../include/environ.h ../include/typhoon.h
+Only in ./src: Makefile.in.orig
+diff -c -r ../typhoon-1.11.0.ORG/src/os.c ./src/os.c
+*** ../typhoon-1.11.0.ORG/src/os.c	Mon Oct  4 12:45:07 1999
+--- ./src/os.c	Tue Mar  7 15:33:34 2000
+***************
+*** 35,40 ****
+--- 35,41 ----
+   *
+   *--------------------------------------------------------------------------*/
+  
++ #    include <sys/file.h>
+  #include "environ.h"
+  #ifdef CONFIG_UNIX
+  #  include <sys/types.h>
+***************
+*** 138,143 ****
+--- 139,147 ----
+  long offset;
+  unsigned bytes;
+  {
++ #ifdef CONFIG_USE_FLOCK
++ 	struct flock flk;
++ #endif
+  	lseek(fh, offset, SEEK_SET);
+  #ifdef CONFIG_DOS
+  	/* Microsoft C */
+***************
+*** 146,152 ****
+--- 150,165 ----
+  #	endif
+  #endif
+  #ifdef CONFIG_UNIX
++ # ifdef CONFIG_USE_FLOCK
++ 	flk.l_type = F_UNLCK;
++ 	flk.l_whence = SEEK_SET;
++ 	flk.l_start = 0;
++ 	flk.l_len = bytes;
++ 
++ 	return fcntl(fh, F_SETLK, &flk);
++ # else
+  	return lockf(fh, F_ULOCK, bytes);
++ # endif
+  #endif
+  #ifdef CONFIG_OS2
+  #	ifdef __BORLANDC__
+diff -c -r ../typhoon-1.11.0.ORG/src/unix.c ./src/unix.c
+*** ../typhoon-1.11.0.ORG/src/unix.c	Mon Oct  4 13:39:42 1999
+--- ./src/unix.c	Tue Mar  7 15:39:50 2000
+***************
+*** 187,195 ****
+--- 187,208 ----
+  #endif
+  
+  #ifndef SEMLOCK
++ #ifdef CONFIG_USE_FLOCK
++         struct flock flk;
++ #endif
++ 
+  	lseek(lock_fh, 0, SEEK_SET);
+  
++ #ifdef CONFIG_USE_FLOCK
++         flk.l_type = F_UNLCK;
++         flk.l_whence = SEEK_SET;
++         flk.l_start = 0;
++         flk.l_len = 1;
++ 
++ 	while( fcntl(lock_fh, F_SETLK, &flk) == -1 )
++ #else
+  	while( lockf(lock_fh, F_ULOCK, 1) == -1 )
++ #endif
+  	{
+  		if( errno != EINTR && errno != EAGAIN )
+  		{
+diff -c -r ../typhoon-1.11.0.ORG/util/Makefile.in ./util/Makefile.in
+*** ../typhoon-1.11.0.ORG/util/Makefile.in	Mon Oct  4 08:28:29 1999
+--- ./util/Makefile.in	Tue Mar  7 17:01:22 2000
+***************
+*** 5,16 ****
+  YFLAGS		= -d
+  CC		= @cc@
+  CFLAGS		= @cflags@
+! LIBS		= -ltyphoon
+  PREFIX		= /usr/local
+  LDFLAGS		= -L../src
+  DESTBIN		= $(PREFIX)/bin
+  DESTOWN		= root
+! DESTGRP		= local
+  SHELL		= /bin/sh
+  PROGRAMS	= ddlp dbdview tyexport tyimport # tybackup tyrestore
+  MADESRCS	= ddl.c exp.c imp.c ddl.h exp.h imp.h
+--- 5,17 ----
+  YFLAGS		= -d
+  CC		= @cc@
+  CFLAGS		= @cflags@
+! LIBS		= -ltyphoon -lcompat
+  PREFIX		= /usr/local
+  LDFLAGS		= -L../src
+  DESTBIN		= $(PREFIX)/bin
+  DESTOWN		= root
+! #DESTGRP		= local
+! DESTGRP		= wheel
+  SHELL		= /bin/sh
+  PROGRAMS	= ddlp dbdview tyexport tyimport # tybackup tyrestore
+  MADESRCS	= ddl.c exp.c imp.c ddl.h exp.h imp.h
+***************
+*** 72,78 ****
+  
+  install:	$(PROGRAMS)
+  		cp $(PROGRAMS) $(DESTBIN)
+! 		cd $(DESTBIN) && -mcs -c $(PROGRAMS)
+  		cd $(DESTBIN) && strip $(PROGRAMS)
+  		cd $(DESTBIN) && chmod 755 $(PROGRAMS)
+  		cd $(DESTBIN) && chown $(DESTOWN) $(PROGRAMS)
+--- 73,79 ----
+  
+  install:	$(PROGRAMS)
+  		cp $(PROGRAMS) $(DESTBIN)
+! #		cd $(DESTBIN) && -mcs -c $(PROGRAMS)
+  		cd $(DESTBIN) && strip $(PROGRAMS)
+  		cd $(DESTBIN) && chmod 755 $(PROGRAMS)
+  		cd $(DESTBIN) && chown $(DESTOWN) $(PROGRAMS)
+Only in ./util: Makefile.in.orig
+diff -c -r ../typhoon-1.11.0.ORG/util/export.c ./util/export.c
+*** ../typhoon-1.11.0.ORG/util/export.c	Mon Oct  4 13:11:31 1999
+--- ./util/export.c	Tue Mar  7 14:50:58 2000
+***************
+*** 74,85 ****
+--- 74,99 ----
+  FILE *lex_file;
+  
+  /*------------------------------ local variables ---------------------------*/
++ #ifdef EXTEND
+  static char paramhelp[] = "\
+  Syntax: tyexport [option]... database[.dbd]\n\
+  Options:\n\
++     -s          export to stdout (extension by M.Ito)\n\
+      -f<path>    Specify data files path\n\
+      -g          Generate export specification\n\
+      -n          Strings are not null-terminated\n";
++ #else
++ static char paramhelp[] = "\
++ Syntax: tyexport [option]... database[.dbd]\n\
++ Options:\n\
++     -f<path>    Specify data files path\n\
++     -g          Generate export specification\n\
++     -n          Strings are not null-terminated\n";
++ #endif
++ 
++ #ifdef EXTEND
++ int OutfileIsStdout = 0;
++ #endif
+  
+  #ifdef CONFIG_PROTOTYPES
+  void err_quit(char *s, ...)
+***************
+*** 335,344 ****
+--- 349,369 ----
+  		{
+  			sprintf(export_fname, "%s.kom", dbd.record[i].name);
+  
++ #ifdef EXTEND
++ 			if (OutfileIsStdout == 1){
++ 				outfile = stdout;
++ 			}else{
++ 				if( !(outfile = fopen(export_fname, "w")) )
++ 					err_quit("Cannot write to '%s'", export_fname);
++ 
++ 				printf("exporting to '%s'\n", export_fname);
++ 			}
++ #else
+  		 	if( !(outfile = fopen(export_fname, "w")) )
+  				err_quit("Cannot write to '%s'", export_fname);
+  
+  			printf("exporting to '%s'\n", export_fname);
++ #endif
+  			ExportTable(i);
+  			fclose(outfile);
+  		}
+***************
+*** 398,403 ****
+--- 423,433 ----
+  		{
+  			switch( argv[i][1] )
+  			{
++ #ifdef EXTEND
++ 				case 's':
++ 					OutfileIsStdout = 1;
++ 					break;
++ #endif
+  				case 'f':
+  					d_dbfpath(argv[i]+2);
+  					break;
+Only in ./util: export.c.orig
+diff -c -r ../typhoon-1.11.0.ORG/util/import.c ./util/import.c
+*** ../typhoon-1.11.0.ORG/util/import.c	Mon Oct  4 13:11:32 1999
+--- ./util/import.c	Tue Mar  7 14:50:58 2000
+***************
+*** 79,89 ****
+--- 79,102 ----
+  static char		import_fname[256];
+  
+  /*------------------------------ local variables ---------------------------*/
++ #ifdef EXTEND
+  static char paramhelp[] = "\
+  Syntax: tyimport [option]... database[.dbd]\n\
+  Options:\n\
++     -s          import from stdin (extension by M.Ito)\n\
+      -f<path>    Specify data files path\n\
+      -g          Generate import specification\n";
++ #else
++ static char paramhelp[] = "\
++ Syntax: tyimport [option]... database[.dbd]\n\
++ Options:\n\
++     -f<path>    Specify data files path\n\
++     -g          Generate import specification\n";
++ #endif
++ 
++ #ifdef EXTEND
++ static int            InfileIsStdin = 0;
++ #endif
+  
+  #ifdef CONFIG_PROTOTYPES
+  void err_quit(char *s, ...)
+***************
+*** 498,507 ****
+--- 511,531 ----
+  			lineno = 1;
+  			sprintf(import_fname, "%s.kom", dbd.record[i].name);
+  
++ #ifdef EXTEND
++ 			if (InfileIsStdin == 1){
++ 				infile = stdin;
++ 			}else{
++ 				if( !(infile = fopen(import_fname, "r")) )
++ 					err_quit("Cannot open '%s'", import_fname);
++ 
++ 				printf("importing from '%s'\n", import_fname);
++ }
++ #else
+  			if( !(infile = fopen(import_fname, "r")) )
+  				err_quit("Cannot open '%s'", import_fname);
+  
+  			printf("importing from '%s'\n", import_fname);
++ #endif
+  			ImportTable(i);
+  			fclose(infile);
+  		}
+***************
+*** 568,573 ****
+--- 592,603 ----
+  				case 'g':
+  					GenerateImportSpec(realname);
+  					exit(1);
++ #ifdef EXTEND
++ 				case 's':
++ 					InfileIsStdin = 1;
++ 					break;
++ #endif
++ 
+  				default:
+  					err_quit("unknown command line option");
+  			}
+Only in ./util: import.c.orig

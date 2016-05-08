@@ -1,0 +1,66 @@
+#! /bin/sh
+if [ "X${TYPHOON_DIR}" = "X" ]
+then
+    TYPHOON_DIR=/usr/local/typhoon;export TYPHOON_DIR
+fi
+#
+if [ "X${TYPHOON_DB}" = "X" ]
+then
+    TYPHOON_DB=typhoondb;export TYPHOON_DB
+fi
+#
+if [ "X${TYSERV_DIR}" = "X" ]
+then
+    TYSERV_DIR=/usr/local/tyserv;export TYSERV_DIR
+fi
+#
+INITFILE=${TYSERV_DIR}/conf/tyserv.conf
+#
+if [ X"$1" = X ]
+then
+    echo "usage : `basename $0` [table_name | all]"
+    exit 1
+fi
+#
+if [ X"$1" = Xall ]
+then
+    for i in `${TYSERV_DIR}/bin/mksrc1.pl <${TYPHOON_DIR}/include/${TYPHOON_DB}.h |\
+              cut -d "	" -f 1 |\
+              sort |\
+              uniq`
+    do
+        ${TYSERV_DIR}/bin/mksrc1.pl <${TYPHOON_DIR}/include/${TYPHOON_DB}.h |\
+        grep "^$i	" |\
+#                ^ = TAB
+        ${TYSERV_DIR}/bin/mksrc2.pl |\
+        sed -e "s/__DB__/${TYPHOON_DB}/g" >tyserv_$i.c
+    done
+else
+    ${TYSERV_DIR}/bin/mksrc1.pl <${TYPHOON_DIR}/include/${TYPHOON_DB}.h |\
+    grep "^$1	" |\
+#            ^ = TAB
+    ${TYSERV_DIR}/bin/mksrc2.pl |\
+    sed -e "s/__DB__/${TYPHOON_DB}/g" >tyserv_$1.c
+fi
+#
+${TYSERV_DIR}/bin/mksrc1.pl <${TYPHOON_DIR}/include/${TYPHOON_DB}.h |\
+cut -d "	" -f 1 |\
+#       ^ = TAB
+sort |\
+uniq |\
+${TYSERV_DIR}/bin/mksrc3.pl >tyserv.h
+#
+sed -e 's/__MESSAGE__/!! DO NOT EDIT THIS SOURCE. THIS IS GENERATED AUTOMATICALY !!/g' \
+    -e "s/__DB__/${TYPHOON_DB}/g" \
+    -e "s^__INITFILE__^${INITFILE}^g" \
+    ${TYSERV_DIR}/ORGSRC/tyserv.c >tyserv.c
+#
+sed -e 's/__MESSAGE__/!! DO NOT EDIT THIS SOURCE. THIS IS GENERATED AUTOMATICALY !!/g' \
+    -e "s/__DB__/${TYPHOON_DB}/g" \
+    -e "s^__INITFILE__^${INITFILE}^g" \
+    ${TYSERV_DIR}/ORGSRC/tysearch.c >tysearch.c
+#
+sed -e 's/__MESSAGE__/!! DO NOT EDIT THIS SOURCE. THIS IS GENERATED AUTOMATICALY !!/g' \
+    -e "s/__DB__/${TYPHOON_DB}/g" \
+    -e "s^__INITFILE__^${INITFILE}^g" \
+    ${TYSERV_DIR}/ORGSRC/tyrecover.c >tyrecover.c

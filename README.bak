@@ -1,0 +1,521 @@
+tyserv-1.0 -- database server which use typhoon RDBMS as database engine
+Copyright (C) 2002  Masahiko Ito
+
+These programs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+These programs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with these programs; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+Mail suggestions and bug reports for these programs to
+m-ito@mbox.kyoto-inet.or.jp
+
+紹介
+====
+
+ tyserv はUNIX系OSで利用することを念頭に開発されているデータベースマ
+ネージャです。tyserv はその基本エンジン部分に Typhoon Relational 
+Database Management System v1.11.0(*) を使用しています。tyserv の提
+供する主な機能は以下のものです。
+
+  1. ソケットインターフェースを利用したネットワーク越しのアクセス機能
+  2. 障害に備えたジャーナルファイル(ロールバック、リカバリ)取得機能
+  3. 排他制御機能
+  4. トランザクション機能
+    o ロールバック(ロールバックジャーナルによる)
+    o コミット
+  5. DB復旧機能(リカバリジャーナルによる)
+  6. IPアドレスによるアクセス制限機能(/etc/hosts.allow, /etc/hosts.denyによる)
+  7. ユーザ認証によるアクセス制限機能(~tyserv/tyserv/etc/passwdによる)
+
+  (*) http://users.footprints.net/~kaz/typhoon.html
+
+インストール
+============
+
+1. システムにユーザ tyserv を追加する
+2. ユーザ tyserv 用にホームディレクトリ /home/tyserv を作成する
+3. tyserv でログインする
+4. $ tar xvzf tyserv-1.0.tar.gz
+   $ ln -s tyserv-1.0/typhoon .
+   $ ln -s tyserv-1.0/tyserv .
+5. PATH に ${HOME}/typhoon/bin, ${HOME}/tyserv/bin を追加する
+  ex. (~tyserv/.profile etc)
+      PATH="${PATH}:${HOME}/typhoon/bin"
+      PATH="${PATH}:${HOME}/tyserv/bin"
+      export PATH
+6. 環境変数 TYPHOON_DIR, TYPHOON_DB, TYSERV_DIR を設定する
+  ex. (~tyserv/.profile etc)
+      TYPHOON_DIR=${HOME}/typhoon;export TYPHOON_DIR
+      TYPHOON_DB=typhoondb;export TYPHOON_DB
+      TYSERV_DIR=${HOME}/tyserv;export TYSERV_DIR
+7. ユーザ tyserv で再度ログインする(上記5. 6. の設定を有効にする)
+8. typhoon-1.11.0 をインストールする
+8.1. typhoon-1.11.0.tar.gz を取得する
+     http://users.footprints.net/~kaz/typhoon.html
+8.2. $ tar xvzf typhoon-1.11.0.tar.gz
+8.3. $ cd typhoon-1.11.0; patch -p1 <../tyserv-1.0/typhoon-1.11.0.patch 
+8.4. $ ./configure; make
+8.5. $ su
+     # make install; exit
+9. データベース定義ファイル(typhoondb.ddl)からデータベース定義
+   (typhoondb.dbd)を生成する。この定義にはサンプルのテーブル(smp1)
+   の定義が含まれる。
+  $ dbdgen typhoondb
+10. インポートコマンドファイル、エクスポートコマンドファイルを作成する
+  $ cd ~tyserv/typhoon/dbd
+  $ tyimport -g typhoondb
+  $ cp typhoondb.imp typhoondb.smp1.imp 
+  $ tyexport -g typhoondb
+  $ cp typhoondb.exp typhoondb.smp1.exp 
+11. データベースサーバ本体の tyserv を生成する(あらかじめ libwrap を
+    インストールしておいて下さい)
+  $ cd ~tyserv/tyserv/src
+  $ make src
+  $ make
+  $ make install
+12. 起動スクリプト rc.tyserv を適切なディレクトリへコピーする
+  $ su
+  # cp ~tyserv/tyserv/etc/rc.tyserv /etc/rc.d/
+13. ブート時に起動スクリプトが動くように設定する
+  ex. (/etc/rc.d/rc.local etc)
+      if [ -x /etc/rc.d/rc.tyserv ]; then
+          . /etc/rc.d/rc.tyserv
+      fi
+14. 必要に応じてコンフィグファイル ~tyserv/tyserv/conf/tyserv.conf を編集する
+15. システムをリブートする
+16. ユーザ tyserv でログインする
+17. サンプルスクリプトを動かして動作確認を行う
+  $ cd ~tyserv/tyserv/sample
+  $ ./sample1.pl localhost 20000
+  $ ./sample2.pl localhost 20000
+18. 本番運用に備えて
+18.1. ~tyserv/tyserv/etc/passwd ファイルを編集し、
+
+    ユーザ:パスワード:アクセス権限(*)
+
+  を設定する。特に、デフォルトのパスワードは必ず変えて下さい。
+  chmod 600 ~tyserv/tyserv/etc/passwd を実行する。
+
+  (*) アクセス権限
+      all  : データベースの参照、更新、SHUTDOWN ができる。 
+      full : データベースの参照、更新ができる。
+      get  : データベースの参照ができる。
+
+18.2 /etc/hosts.allow, /etc/hosts.deny を適切に設定する
+
+tyserv へのアクセス方法
+=======================
+
+tyserv の開いているソケットポートにコマンドを書き込んで、同一ポートから
+結果を読み取ることでアクセスを行います。よって、ソケット通信をサポート
+する全ての言語から tyserv へのアクセスを行うことが出来るはずです。簡単
+な話し telnet でアクセス出来ます(実用的かは別にして(^^;)。
+
+また、perl用のアクセスライブラリ tyserv/sample/tyserv.pl を用意してます。
+使い方は tyserv/sample 以下のスクリプトを参照して下さい。
+
+各コマンドのトークンの区切り文字はタブ(0x09)です。
+
+  o START_TRAN USER PASSWORD
+    更新モードでトランザクションを開始します。先行するトランザクションが
+    有る場合はそれらが全て終了するまで待ちます。また、本トランザクション
+    の実行中は後から開始されたトランザクションは全て待たされます。本トラ
+    ンザクション内で更新系のコマンドが実行された場合はロールバックに備え
+    てロールバックジャーナルが取得されます。
+
+  o START_TRAN_NJ USER PASSWORD
+    更新モードでトランザクションを開始します。 START_TRAN との違いはロー
+    ルバックジャーナルを取得しない点です。ロールバック機能が利用できない
+    代わりに、更新スピードを速めることが出来ます。この点をよく理解した上
+    で利用して下さい。
+
+  o START_TRANM USER PASSWORD
+    参照モードでトランザクションを開始します。更新モードのトランザクショ
+    ンが先行する場合に限り、それが終了するまで待ちます。また、本トランザ
+    クションの実行中は後から開始された更新モードのトランザクションは全て
+    待たされます。
+
+  o GET RECNAME KEYNAME CONDITION KEYVALUE1 KEYVALUE2 ... 
+    キー値で検索条件を指定し、目的のレコードを取得します。レコードは
+
+      ステータス1 ステータス2 項目名1=値1 項目名2=値2 ... 項目名n=値n
+
+    の形式で返ります(perl等のスクリプト言語からの利用を念頭にこのような
+    仕様にしました)。区切り文字はタブです。
+
+    CONDITIONには以下の条件が指定できます
+      EQ, ==      : キーの値が指定値に等しいレコードを検索します
+      GE, >=, =>  : キーの値が指定値以上で直近のレコードを検索します
+      GT, >       : キーの値が指定値より大きく直近のレコードを検索します
+
+  o GETNEXT RECNAME KEYNAME
+    指定したキー項目の昇順に次のレコードを取得します。
+
+  o PUT RECNAME MEMBER1=VALUE1 MEMBER2=VALUE2 ... 
+    レコードを挿入します。
+
+  o UPDATE RECNAME PKEYVALUE1 PKEYVALUE2 ... MEMBER1=VALUE1 MEMBER2=VALUE2 ... 
+    主キーで特定したレコードの内容を更新します。
+
+  o DELETE RECNAME PKEYVALUE1 PKEYVALUE2 ... 
+    主キーで特定したレコードを削除します。
+
+  o ROLLBACK
+    トランザクションの開始時点、コミットの実行時点のうち、近いほうの
+    時点の状態にDBの内容を戻します。一般的にはロールバック実行時に排
+    他制御を解除する実装が普通ですが、tyserv では排他制御の解除を行い
+    ません。
+ 	
+  o COMMIT
+    トランザクションを確定します。一般的にはコミット実行時に排他制御を
+    解除する実装が普通ですが、tyserv では排他制御の解除を行いません。
+ 	
+  o ABORT_TRAN
+    トランザクションの開始時点、コミットの実行時点のうち、近いほうの時
+    点の状態にDBの内容を戻し、トランザクションを終了します。排他制御は
+    解除されます。
+
+  o END_TRAN
+    トランザクションを確定し、終了します。排他制御の解除を行います。
+
+  o SHUTDOWN USER PASSWORD
+    tyserv を停止します。
+
+さらなる情報は tyserv/doc/*, tyserv/sample/*.pl を参照して下さい。
+
+tyserv への telnet でのアクセス例
+=================================
+
+$ telnet localhost 20000
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+start_tran	user	user				<-Input
+OK	TRANSACTION START				<-Response
+put	smp1	id=1111	name=Taro	salary=150000	<-Input
+OK	INSERTED					<-Response
+put	smp1	id=2222	name=Jiro	salary=200000	<-Input
+OK	INSERTED					<-Response
+put	smp1	id=3333	name=Goro	salary=250000	<-Input
+OK	INSERTED					<-Response
+get	smp1	pkey	eq	1111			<-Input
+OK	FOUND	id=1111	name=Taro	salary=150000	<-Response
+getnext	smp1	pkey					<-Input
+OK	FOUND	id=2222	name=Jiro	salary=200000	<-Response
+getnext	smp1	pkey					<-Input
+OK	FOUND	id=3333	name=Goro	salary=250000	<-Response
+update	smp1	2222	name=Jirorin			<-Input
+OK	UPDATED						<-Response
+get	smp1	pkey	eq	2222			<-Input
+OK	FOUND	id=2222	name=Jirorin	salary=250000	<-Response
+delete	smp1	2222					<-Input
+OK	DELETED						<-Response
+get	smp1	pkey	eq	2222			<-Input
+NG	NOTFOUND					<-Response
+rollback						<-Input
+OK	ROLLBACKED					<-Response
+end_tran						<-Input
+OK	TRANSACTION END					<-Response
+Connection closed by foreign host.
+
+アクセス状態コード
+==================
+
+ +----+----------------------------------------------------+
+ |STS1| STS2                                               |
+ +----+----------------------------------------------------+
+ | OK | COMMITED                                           |
+ | OK | DELETED                                            |
+ | OK | FOUND                                              |
+ | OK | INSERTED                                           |
+ | OK | NORMAL SHUTDOWN                                    |
+ | OK | ROLLBACKED                                         |
+ | OK | TRANSACTION ABORT, ROLLBACKED                      |
+ | OK | TRANSACTION END                                    |
+ | OK | TRANSACTION START                                  |
+ | OK | UPDATED                                            |
+ +----+----------------------------------------------------+
+ | NG | ACCESS DENIED(ip address)                          |
+ | NG | CAN NOT OPEN DATABASE db_status=xxxx               |
+ | NG | CAN NOT READ SOCKET                                |
+ | NG | DUPLICATE                                          |
+ | NG | NO ROLLBACK JOURNAL                                |
+ | NG | NOT GRANTED                                        |
+ | NG | NOTFOUND                                           |
+ | NG | REQUIRE START_TRAN OR START_TRAN_NJ OR START_TRANM |
+ | NG | SOCKET READ ERROR                                  |
+ | NG | SOCKET READ ERROR, ROLLBACKED                      |
+ | NG | STATUS=xxxx                                        |
+ | NG | UNKNOWN CONDITION                                  |
+ | NG | UNKNOWN FUNCTION                                   |
+ | NG | UNKNOWN ITEM                                       |
+ | NG | UNKNOWN KEY                                        |
+ | NG | UNKNOWN RECORD                                     |
+ +----+----------------------------------------------------+
+
+プログラミングの注意点
+======================
+
+o START_TRAN    に始まり END_TRAN   で終ること。
+  START_TRAN_NJ          ABORT_TRAN
+  START_TRANM
+
+  END_TRAN, ABORT_TRAN を発行せずにクライアントを終了した場合は
+  ABORT_TRAN 扱いとなります。
+
+o 共有参照アクセスを行う場合は START_TRANM で始めること。
+
+o START_TRAN* と END_TRAN, ABORT_TRAN の間はできる限り短く設計す
+  ること。
+
+o 長時間処理は適当な間隔でEND_TRAN(もしくは ABORT_TRAN)を発行し、
+  トランザクションを区切ること。
+
+インポートスクリプト(tyimp)の利用例
+===================================
+
+o tyimp の読み込む定義ファイルを作成する
+
+  $ cd ~tyserv/typhoon/dbd
+  $ tyimport -g typhoondb
+
+    tyimport(typhoon-1.11.0に付属のコマンド)が作成する
+    定義ファイル(typhoondb.imp)にはデータベース(typhoondb)に
+    含まれる全てのテーブルのインポート定義が含まれています。
+
+  $ cp typhoondb.imp typhoondb.smp1.imp 
+  $ vi typhoondb.smp1.imp 
+
+    typhoondb.imp を typhoondb.テーブル名.imp にコピーし、該
+    当テーブルに関する定義のみを残すように編集します。tyimp
+    は typhoondb.テーブル名.imp を定義ファイルとして読み込み
+    ます。
+
+o 実行する
+
+  $ tyimp typhoondb smp1 < foo.txt
+
+    foo.txt(各項目をタブで区切ったCSVファイル)を読み込み、デー
+    タベース(typhoondb)に含まれるテーブル(smp1)にインポートを
+    行う。foo.txtの各行は必ずインポート定義ファイル(typhoondb.smp1.imp)
+    に定義されている項目と同じ数のフィールドを含んでいなければならない。
+
+エクスポートスクリプト(tyexp)の利用例
+=====================================
+
+o tyexp の読み込む定義ファイルを作成する
+
+  $ cd ~tyserv/typhoon/dbd
+  $ tyexport -g typhoondb
+
+    tyexport(typhoon-1.11.0に付属のコマンド)が作成する
+    定義ファイル(typhoondb.exp)にはデータベース(typhoondb)に
+    含まれる全てのテーブルのエクスポート定義が含まれています。
+
+  $ cp typhoondb.exp typhoondb.smp1.exp 
+  $ vi typhoondb.smp1.exp 
+
+    typhoondb.exp を typhoondb.テーブル名.exp にコピーし、該
+    当テーブルに関する定義のみを残すように編集します。tyexp
+    は typhoondb.テーブル名.exp を定義ファイルとして読み込み
+    ます。
+
+o 実行する
+
+  $ tyexp typhoondb smp1 > foo.txt
+
+    データベース(typhoondb)に含まれるテーブル(smp1)のデータを
+    foo.txt(各項目をタブで区切ったCSVファイル)に出力します。
+
+tyserv 再生成
+=============
+
+データベース定義(typhoondb.ddl)を更新した場合、typhoondb.dbd, 
+tyserv, tyrecover を再生成する必要が有ります。
+
+1. $ dbdgen typhoondb
+2. kill -TERM tyservのpid
+3. $ cd ~tyserv/tyserv/src
+4. $ make backup
+5. $ make src
+6. $ make
+7. $ make install
+8. $ /etc/rc.d/rc.tyserv
+
+データベース定義(typhoondb.ddl)を更新した場合(テーブルの追加等)、
+typhoondb.dbd, tyserv, tyrecover を再生成する必要が有ります。
+
+1. $ dbdgen typhoondb
+2. kill -TERM tyservのpid
+3. $ cd ~tyserv/tyserv/src
+4. Makefile を編集し `OBJS' マクロを修正します。
+  ex. テーブル `smp1' が有る場合 OBJS は以下のように定義されています。
+
+        OBJS = tyserv_smp1.o
+
+      そこにテーブル `smp2' を追加する場合 OBJS の定義は以下のように
+      なります。
+
+        OBJS = tyserv_smp1.o \
+               tyserv_smp2.o
+
+      オブジェクトの名称は "tyserv_" + table_name + ".o" でないといけ
+      ません。
+
+5. $ make backup
+6. $ make src
+7. $ make
+8. $ make install
+9. $ /etc/rc.d/rc.tyserv
+
+起動スクリプト(rc.tyserv)
+=========================
+
+o usage : rc.tyserv [-w]
+
+  -w : warm起動をします。
+       リカバリジャーナル(~tyserv/tyserv/journal/rvj.dat)は
+       起動時点の内容に追加出力されます。
+       ロールバックジャーナル(~tyserv/tyserv/journal/rbj.dat)
+       が存在する場合は自動的にロールバック処理が実行されます。
+
+  オプション無し : cold起動をします。
+       起動時点のリカバリジャーナルの内容は破棄され、先頭から
+       書き出されます。
+       起動時点のロールバックジャーナルの内容は破棄され、ロー
+       ルバックは行われません。
+
+  サーバは自動的にバックグラウンドで実行されます。
+
+データベース復旧ツール(tyrecover.sh)
+====================================
+
+o usage : tyrecover.sh [ファイル]
+
+  ファイル : 未指定時は ${TYSERV_DIR}/journal/rvj.dat を仮定する
+             `-' 指定時は標準入力から入力される
+
+o 皆さんはディスクのバックアップは取っておられますか？。取って
+  ないという方も大勢おられると思います。また取っているとしても
+  毎日取るなんて方は極まれなんではないでしょうか。
+
+  でもこれが業務システムの利用するデータベースとなると、最低で
+  も１日１回のバックアップが必要でしょう。
+
+  しかし１日１回のバックアップではディスククラッシュ等のタイミ
+  ングによって最悪２４時間前の状態戻すのが精いっぱいで、その後
+  の入力データに関しては入力伝票をかき集めて、もう一度手作業で
+  入力しなおさなければなりません。業務システムに関して言えばこ
+  れは
+
+                          致  命  的
+
+  です。そこで tyserv では直近のバックアップ + リカバリジャーナ
+  ルを利用してクラッシュの直前の状態にデータベースを復元するツー
+  ル tyrecover.sh を用意しています。
+
+  tyrecover.sh の利用はバックアップのタイミングと密接に関係して
+  きます。以下にバックアップ運用例と障害時の復旧例を示します。
+
+o 通常の運用タイムスケジュール例(１日に１回バックアップの場合)
+
+       00:00           23:00  00:00            23:00 00:00
+  tyserv +---------------+      +----------------+     +---...
+         cold起動        停止   cold起動         停止
+
+  backup                 +------+                +-----+
+                         開始   終了             開始  終了
+
+  この例では毎日23:00〜00:00の１時間でバックアップを取っています。
+
+o 通常の運用タイムスケジュール例(３日に１回バックアップ＆システム
+  の稼働は9-18時に限る場合)
+
+         09   18     09   18    09   18    09   18    09   18
+  tyserv +----+      +----+     +----+     +----+     +----+...
+       cold  停止   warm 停止 warm  停止 cold  停止 warm  停止
+       起動         起動      起動       起動       起動
+  backup                             +-+
+
+  この例の場合バックアップを取った直後の起動に限り、cold起動 して
+  る点に気をつけて下さい。また、毎回の停止時にリカバリジャーナルだ
+  けでもバックアップしておくようにするとさらに安全です。さらにジャー
+  ナルだけ別パーティションにするのも安全です。ディスククラッシュと
+  同時にリカバリジャーナルまでふっ飛ぶと、どうしようもないですから
+  (^^;。
+
+o 障害発生時の対応
+
+              計画停止 起動   ダウン      復旧 計画停止 起動
+  tyserv    ...---+     +-------* - - - - - +------+     +----...
+  backup          +-----+       |           |      +-----+
+                             障害発生       |
+                                |           |
+  restore                       +-----+     |
+  recover                             +-----+
+
+    o backup例 : $ cd /home/tyserv/typhoon/data
+                 $ tar cvzf /dev/st0 .
+
+    o restore例 : $ cd /home/tyserv/typhoon/data
+                  $ tar xvzpf /dev/st0
+
+    o recover例 : $ tyrecover.sh
+
+o バックアップ運用のまとめ
+
+  o 停止後にバックアップを取った場合は次回の起動はcold起動
+  o 停止後にバックアップを取らなかった場合は次回の起動はwarm起動
+  o リカバリジャーナルは毎回停止時にバックアップ取るのが安全
+
+o リカバリ運用のまとめ
+
+  o バックアップからデータベースを元に戻す
+  o tyrecover.sh を実行し、クラッシュ直前の状態まで復旧する
+
+TODO & BUGS
+===========
+
+o 現行のtyservは排他の単位がデータベースなので、排他モードの
+  トランザクション実行時に全てのテーブルに排他がかかります。
+  これは、一つの tyserv プロセスが全てのクライアントからの更
+  新トランザクションを受け付け、処理することで共有そのものを
+  避ける方法で排他制御を行っている(というか行わずにすましてる
+  というか...)為にしかたのないことです(^^;。
+
+  かといって、tyserv自身でリソースの管理を行い、粒度の細かい
+  排他制御を実現するのは作者の力不足のため非常に困難です。
+
+  そこで次善の策としてデータベースを分割し tyserv をその数だ
+  け立ち上げるという方法で排他の粒度を幾分細かくすることがで
+  きると考えてます。このあたりの手順、検証等を今後行なってい
+  きたいと思ってます。
+
+o データベース復旧ツール(tyrecover.sh)はコミット情報を参照し
+  てません。よってデータベースは常にリカバリジャーナルの最後
+  まで復旧されてしまいます。将来的には最終のコミット時点まで
+  復旧するようにしたいと考えてます。
+
+o テーブルの項目に格納できるのは文字列のみです。また、文字列
+  の中にタブを含めることは出来ません。
+
+typhoon-1.11.0の情報
+====================
+
+see typhoon-1.11.0/man/*
+    typhoon-1.11.0/examples/*
+    http://users.footprints.net/~kaz/typhoon.html
+
+---
+Masahiko Ito
+m-ito@mbox.kyoto-inet.or.jp
+http://web.kyoto-inet.or.jp/people/m-ito/index.html

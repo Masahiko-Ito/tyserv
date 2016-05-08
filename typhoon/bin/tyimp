@@ -1,0 +1,55 @@
+#! /bin/sh
+if [ "X${TYPHOON_DIR}" = "X" ]
+then
+    TYPHOON_DIR=/usr/local/typhoon;export TYPHOON_DIR
+fi
+#
+if [ "X$1" = "X-h" -o "X$1" = "X--help" ]
+then
+    echo "Usage : $0 DATABASE TABLE"
+    exit 0
+fi
+#
+cd ${TYPHOON_DIR}/data
+#
+if [ -f ${TYPHOON_DIR}/dbd/$1.dbd ]
+then
+    cp -f ${TYPHOON_DIR}/dbd/$1.dbd .
+else
+    echo ${TYPHOON_DIR}/dbd/$1.dbd not found.
+    echo please make database $1.
+    exit 1
+fi
+#
+if [ -f ${TYPHOON_DIR}/dbd/$1.$2.imp ]
+then
+    cp -f ${TYPHOON_DIR}/dbd/$1.$2.imp $1.imp
+else
+    echo ${TYPHOON_DIR}/dbd/$1.$2.imp not found.
+    echo please tyimport -g $1 in ${TYPHOON_DIR}/dbd,and
+    echo edit $1.imp to $1.$2.imp
+    exit 1
+fi
+#
+##cat |\
+##sort |\
+##sed -e 's/$//g' -e 's///g' -e 's/ *	 */	/g' -e 's/ *$//g' |\
+##perl -e 'while ($rec = <STDIN>){
+##    $rec =~ s/\033(..)(..)/pack("CC",hex($1),hex($2))/eg;
+##    print $rec;
+##}' |\
+##sed -e 's/\\/\\\\/g' | \
+##sed -e 's/^/\"/g' -e 's/	/\", \"/g' -e 's/$/\"/g' | \
+##tyimport -s $1
+cat |\
+sort |\
+sed -e 's/\\/\\\\/g' \
+    -e 's/ *	 */	/g' \
+    -e 's/ *$//g' \
+    -e 's/^/\"/g' \
+    -e 's/	/\", \"/g' \
+    -e 's/$/\"/g' | \
+tyimport -s $1
+#
+rm -f ${TYPHOON_DIR}/data/$1.dbd
+rm -f ${TYPHOON_DIR}/data/$1.imp

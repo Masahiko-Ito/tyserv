@@ -1,0 +1,183 @@
+     HOWTO-USE-TYSERV.txt(tyserv を利用するに当たってのローカルなルール)
+
+                 Masahiko Ito (m-ito@mbox.kyoto-inet.or.jp)
+
+                               2002.7.1 
+
+1. データベース定義サンプル
+
+database typhoondb {
+#
+# data file definition
+#
+    data file "RECORDNAME.dat"   contains RECORDNAME;
+#
+# primary key file definition
+#
+    key  file "RECORDNAME.pk"    contains RECORDNAME.RECORDNAME_pkey;
+#
+# secondary key file definition
+#
+    key  file "RECORDNAME.s1"    contains RECORDNAME.RECORDNAME_skey1;
+    key  file "RECORDNAME.s2"    contains RECORDNAME.RECORDNAME_skey2;
+#
+# record definition
+#
+    record RECORDNAME {
+        char    MEMBER1[10 + 1];
+        char    MEMBER2[20 + 1];
+        char    MEMBER3[30 + 1];
+        char    MEMBER4[40 + 1];
+        char    MEMBER5[40 + 1];
+        char    MEMBER6[40 + 1];
+        char    MEMBER7[40 + 1];
+
+#
+# primary key definition
+#
+        primary   key RECORDNAME_pkey  {MEMBER1 asc,MEMBER2 desc};
+#
+# secondary key file definition
+#
+        alternate key RECORDNAME_skey1 {MEMBER3 asc,MEMBER4 desc};
+        alternate key RECORDNAME_skey2 {MEMBER5 asc,MEMBER6 desc};
+#                                               asc  means ascending
+#                                               desc means descending
+    }
+
+    record another_RECORDNAME {
+
+        ...
+
+    }
+}
+
+  (1) データベース名は `typhoondb' とする。
+  (2) データファイル名は `RECORDNAME.{dat, pk, s1, s2 ...}' とする。
+      (`RECORDNAME' 任意の名称)
+  (3) キー名称は `RECORDNAME_{pkey, skey1, skey2 ...}' とする。
+      (`RECORDNAME' 任意の名称)
+  (4) 項目の属性は `char' のみ利用可能である。
+  (5) キーの属性は `primary', `alternate' のみ利用可能である。
+      (`foreign' は利用できない)
+  (6) 基本的に上記のサンプルに出てこない定義命令は利用できないと
+      考えて下さい。
+
+2. データベース定義(DBD)の生成
+
+  $ dbdgen typhoondb
+
+3. 標準出力へのエキスポート(csv形式への出力)
+
+3.1. 準備
+  $ cd ${TYPHOON_DIR}/dbd; tyexport -g typhoondb
+  $ cp typhoondb.exp to typhoondb.RECORDNAME.exp
+  $ typhoondb.RECORDNAME.exp を編集
+
+    typhoondb.RECORDNAME.exp 中の RECORDNAME に関する定義のみを残す。
+
+3.2. エキスポート
+  $ tyexp typhoondb RECORDNAME
+
+4. 標準入力からのインポート(csv形式からの入力)
+
+4.1. 準備
+  $ cd ${TYPHOON_DIR}/dbd; tyimport -g typhoondb
+  $ cp typhoondb.imp to typhoondb.RECORDNAME.imp
+  $ typhoondb.RECORDNAME.imp を編集
+
+    typhoondb.RECORDNAME.imp 中の RECORDNAME に関する定義のみを残す。
+
+4.2. インポート
+  $ tyimp typhoondb RECORDNAME
+
+5. tyserv の生成
+
+  データベース定義(typhoondb.dbd)を更新した場合は `tyserv' を
+  再生成しなければなりません。
+
+   $ kill -TERM tyservのpid
+   $ cd ${TYSERV_DIR}/src
+   必要に応じて Makefile の OBJS マクロを修正
+   $ make backup
+   $ make src
+   $ make
+   $ make install
+   $ tyserv &
+
+6. tyserv へのアクセスコマンド
+
+  (1.1) 更新モードでのトランザクション開始
+    in  : "START_TRAN USER PASSWD\n"
+    out : "STATUS STATUS2\n"
+
+  (1.2) 更新モードでのトランザクション開始(ロールバックジャーナル取得無し)
+    in  : "START_TRAN_NJ USER PASSWD\n"
+    out : "STATUS STATUS2\n"
+
+  (1.3) 参照モードでのトランザクション開始
+    in  : "START_TRANM USER PASSWD\n"
+    out : "STATUS STATUS2\n"
+
+  (2) キー値指定によるレコード取得
+    in  : "GET RECNAME KEYNAME CONDITION KEYVALUE1 KEYVALUE2 ... \n"
+    out : "STATUS STATUS2 MEMBERNAME1=VALUE1 MEMBERNAME2=VALUE2 ... \n"
+
+      o RECNAME,KEYVALUE1,KEYVALUE2 ... 任意の値
+      o KEYNAME は pkey, skey1, skey2 ...でなければならない 
+      o CONDITION は "==", "eq", "EQ",
+                     ">",  "gt", "GT",
+                     ">=", "=>", "ge", "GE"
+        でなければならない
+
+  (3) 指定キーの昇順に次のレコードを取得
+    in  : "GETNEXT RECNAME KEYNAME\n"
+    out : "STATUS STATUS2 MEMBERNAME1=VALUE1 MEMBERNAME2=VALUE2 ... \n"
+
+      o RECNAME ... 任意の値
+      o KEYNAME は pkey, skey1, skey2 ...でなければならない 
+
+  (4) レコードの追加
+    in  : "PUT RECNAME MEMBER1=VALUE1 MEMBER2=VALUE2 ... \n" 
+    out : "STATUS STATUS2\n"
+
+      o RECNAME,MEMBER1,VALUE1,MEMBER2,VALUE2 ... 任意の値
+
+  (5) レコードの更新
+    in  : "UPDATE RECNAME PKEYVALUE1 PKEYVALUE2 ... MEMBER1=VALUE1 MEMBER2=VALUE2 ... \n" 
+    out : "STATUS STATUS2\n"
+
+      o RECNAME,PKEYVALUE1,PKEYVALUE2 ... , MEMBER1,VALUE1,MEMBER2,VALUE2 は任意の値
+
+  (6) レコードの削除
+    in  : "DELETE RECNAME PKEYVALUE1 PKEYVALUE2 ... \n" 
+    out : "STATUS STATUS2\n"
+
+      o RECNAME,PKEYVALUE1,PKEYVALUE2 ... 任意の値
+
+  (7) ロールバック
+    in  : "ROLLBACK\n"
+    out : "STATUS STATUS2\n"
+
+  (8) コミット
+    in  : "COMMIT\n"
+    out : "STATUS STATUS2\n"
+
+  (9.1) ロールバックを伴ったトランザクションの終了
+    in  : "ABORT_TRAN\n"
+    out : "STATUS STATUS2\n"
+
+  (9.2) コミットを伴ったトランザクションの終了
+    in  : "END_TRAN\n"
+    out : "STATUS STATUS2\n"
+
+  (10) tyserv の停止
+    in  : "SHUTDOWN USER PASSWD\n"
+    out : "STATUS STATUS2\n"
+
+----------------------------------------------------------------------------
+
+      o 各コマンドのトークンの区切り文字はタブ
+      o STATUS 	は "OK" or "NG"
+      o STATUS2 は状態詳細情報
+

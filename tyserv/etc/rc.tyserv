@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# tyserv		typhoon server
+#
+# Author:       Masahiko Ito <m-ito@mbox.kyoto-inet.or.jp>
+# Modyfy:
+# description: tyserv is database management system, which use typhoon
+# processname: tyserv
+
+ROLLBACKER=/home/tyserv/tyserv/bin/tyrollback.sh
+SERVER=/home/tyserv/tyserv/bin/tyserv
+
+HOSTNAME=localhost;export HOSTNAME
+TYPHOON_DIR=/home/tyserv/typhoon;export TYPHOON_DIR
+TYPHOON_DB=typhoondb;export TYPHOON_DB
+TYSERV_DIR=/home/tyserv/tyserv;export TYSERV_DIR
+
+[ -f $ROLLBACKER ] || exit 0
+[ -f $SERVER ] || exit 0
+
+if [ "X$1" = "X-w" ]
+then
+    echo -n "Starting tyserv server(warm): "
+    if [ -s ${TYSERV_DIR}/journal/rbj.dat ]
+    then
+        echo -n "Starting tyserv rollback: "
+        $ROLLBACKER
+    fi
+else
+    echo -n "Starting tyserv server(cold): "
+    /bin/rm -f ${TYSERV_DIR}/journal/rbj.dat
+    /bin/rm -f ${TYSERV_DIR}/journal/rvj.dat
+fi
+
+$SERVER &
+echo $! >${TYSERV_DIR}/etc/tyserv.pid
+echo

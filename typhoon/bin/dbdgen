@@ -1,0 +1,17 @@
+#! /bin/sh
+if [ "X${TYPHOON_DIR}" = "X" ]
+then
+    TYPHOON_DIR=/usr/local/typhoon;export TYPHOON_DIR
+fi
+#
+if [ "X$1" = "X-h" -o "X$1" = "X--help" ]
+then
+    echo "Usage : `basename $0` DATABASE"
+    exit 0
+fi
+#
+cd ${TYPHOON_DIR}/ddl
+#
+ddlp $1
+mv $1.dbd ${TYPHOON_DIR}/dbd
+mv $1.h ${TYPHOON_DIR}/include

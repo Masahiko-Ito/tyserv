@@ -1,0 +1,267 @@
+                   HOWTO-USE-TYPHOON.txt (cheap manual)
+
+                Masahiko Ito (m-ito@mbox.kyoto-inet.or.jp)
+
+                               2002.7.1
+
+1. database definition
+  ddlp DATABASE -> DATABASE.ddl ---> DATABASE.h
+                                ---> DATABASE.dbd
+
+2. ddl syntax
+
+database DATABASE_NAME {
+
+    define STRING_LENGTH 20+1
+
+    data file "DATAFILE_NAME"    contains RECORD_NAME;
+    key  file "PKEY_FILENAME"    contains RECORD_NAME.PKEY_NAME;
+    key  file "SKEY_FILENAME"    contains RECORD_NAME.SKEY_NAME;
+
+    record RECORD_NAME {
+        char    ITEM_NAME1[STRING_LENGTH];
+        char    ITEM_NAME2[STRING_LENGTH];
+        char    ITEM_NAME3[STRING_LENGTH];
+        char    ITEM_NAME4[STRING_LENGTH];
+        long    ITEM_NAME5;
+        struct {
+            char    ITEM_NAME6[OCCURS][STRING_LENGTH];
+            long    ITEM_NAME7;
+        } STRUCT_NAME[OCCURS];
+
+        primary   key PKEY_NAME { ITEM_NAME1 asc,ITEM_NAME2 desc };
+        alternate key SKEY_NAME { ITEM_NAME3 asc,ITEM_NAME4 desc };
+    }
+
+    record ANOTHER_RECORD_NAME {
+
+        ...
+
+    }
+}
+
+/*
+    char, int, long, float, etc can be used for item type (like C language)
+ */
+
+3. C syntax
+
+#include <sys/types.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <typhoon.h>
+
+/* DataBase definition */
+#include "DataBase.h"
+
+main()
+{
+    int  sts;
+    struct Record_Name recwk;
+    struct Pkey_Name pkeywk;
+
+    /*
+     * SET DBD DIR
+     */
+    d_dbdpath("/ ... /typhoon/dbd");
+
+    /*
+     * SET DATA DIR
+     */
+    d_dbfpath("/ ... /typhoon/data");
+
+    /*
+     * OPEN DATABASE
+     */
+    if(d_open("DataBase", "s") != S_OKAY){
+        fprintf(stderr, "Cannot open database (db_status %d)\n", db_status);
+        exit(1);
+    }
+
+    /*
+     * SEEK PRIMARY KEY
+     */
+    pkeywk.item1[0] = '\0';
+    pkeywk.item2[0] = '\0';
+
+    switch (sts = d_keyfind(PKEY_NAME, &pkeywk)){
+      case S_OKAY:
+        break;
+      case S_NOTFOUND:
+        /*
+         * SEEK NEXT PRIMARY KEY
+         */
+        switch (sts = d_keynext(PKEY_NAME)){
+          case S_OKAY:
+          case S_NOTFOUND:
+            break;
+          default:
+            fprintf(stderr, "Cannot keynext (db_status %d)\n", db_status);
+            exit(1);
+        }
+        break;
+      default:
+        fprintf(stderr, "Cannot keyfind (db_status %d)\n", db_status);
+        exit(1);
+        break;
+    }
+
+    /*
+     * READ CURRENT RECORD
+     */
+    if (sts == S_OKAY){
+        switch(sts = d_recread(&recwk)){
+          case S_OKAY:
+            break;
+          default:
+            fprintf(stderr, "Cannot recread (db_status %d)\n", db_status);
+            exit(1);
+        }
+    }
+
+    while (sts == S_OKAY){
+
+        printf("item1=(%s)\n", recwk.item1);
+        printf("item2=(%s)\n", recwk.item2);
+        printf("item3=(%d)\n", recwk.item3);
+
+        /*
+         * SEEK NEXT PRIMARY KEY
+         */
+        switch (sts = d_keynext(PKEY_NAME)){
+          case S_OKAY:
+          case S_NOTFOUND:
+            break;
+          default:
+            fprintf(stderr, "Cannot keynext (db_status %d)\n", db_status);
+            exit(1);
+        }
+
+        /*
+         * READ CURRENT RECORD
+         */
+        if (sts == S_OKAY){
+            switch(sts = d_recread(&recwk)){
+              case S_OKAY:
+                break;
+              default:
+                fprintf(stderr, "Cannot recread (db_status %d)\n", db_status);
+                exit(1);
+            }
+        }
+    }
+
+    /*
+     * INSERT RECORD
+     */
+    strcpy(recwk.item1,"poipoi");
+    strcpy(recwk.item2,"poipoi");
+    recwk.item3 = 123;
+
+    switch (sts = d_fillnew(RECORD_NAME, &recwk)){
+      case S_OKAY:
+      case S_DUPLICATE:
+        break;
+      default:
+        fprintf(stderr, "Cannot fillnew (db_status %d)\n", db_status);
+        exit(1);
+        break;
+    }
+
+    /*
+     * SEEK PRIMARY KEY(DIRECT)
+     */
+    strcpy(pkeywk.item1,"poipoi");
+    strcpy(pkeywk.item2,"poipoi");
+
+    switch (sts = d_keyfind(PKEY_NAME, &pkeywk)){
+      case S_OKAY:
+        break;
+      default:
+        fprintf(stderr, "Cannot keyfind (db_status %d)\n", db_status);
+        exit(1);
+        break;
+    }
+
+    /*
+     * READ CURRENT RECORD
+     */
+    if (sts == S_OKAY){
+        switch(sts = d_recread(&recwk)){
+          case S_OKAY:
+            break;
+          default:
+            fprintf(stderr, "Cannot recread (db_status %d)\n", db_status);
+            exit(1);
+        }
+    }
+
+    recwk.item3++;
+
+    /*
+     * UPDATE CURRENT RECORD
+     */
+    if (sts == S_OKAY){
+        switch(sts = d_recwrite(&recwk)){
+          case S_OKAY:
+            break;
+          default:
+            fprintf(stderr, "Cannot recwrite (db_status %d)\n", db_status);
+            exit(1);
+        }
+    }
+
+    /*
+     * DELETE CURRENT RECORD
+     */
+    if (sts == S_OKAY){
+        switch(sts = d_delete()){
+          case S_OKAY:
+            break;
+          default:
+            fprintf(stderr, "Cannot delete (db_status %d)\n", db_status);
+            exit(1);
+        }
+    }
+
+    /*
+     * CLOSE DATABASE
+     */
+    d_close();
+
+    exit(0);
+}
+
+/*
+ * other function
+ *
+ * d_recfirst(RECORD_NAME); d_recread(&recwk);
+ * d_recnext(RECORD_NAME);  d_recread(&recwk);
+ * d_keyfirst(PKEY_NAME);   d_recread(&recwk);
+ *
+ */
+
+4. Makefile sample
+
+DEFINES         = -I/usr/local/include -I/home/masa/typhoon/include
+CC              = gcc
+CFLAGS          = -O $(DEFINES) # -v
+LIBS            = -ltyphoon
+LDFLAGS         = -L/usr/local/lib
+SHELL           = /bin/sh
+
+all:	foo.exe
+
+foo.exe:	foo.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ foo.c $(LIBS)
+
+5. export tool
+  cd DBD_DIR
+  tyexport -g DATABASE  -> DATABASE.exp will be made
+  tyexport DATABASE.exp -> DATABASE.kom will be made, this is datafile
+
+6. import tool
+  cd DBD_DIR
+  tyimport -g DATABASE  -> DATABASE.imp will be made
+  tyimport DATABASE.imp -> import to DATABASE from DATABASE.kom
+
