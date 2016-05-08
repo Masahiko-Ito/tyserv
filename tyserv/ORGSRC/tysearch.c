@@ -32,8 +32,8 @@
 int  Rvj_sw;
 int  Rbj_sw;
 
-FILE *Fp_rvj;
-FILE *Fp_rbj;
+int  Fd_rvj;
+int  Fd_rbj;
 
 char Tmp_buf[BUF_LEN];
 char In_buf[BUF_LEN];

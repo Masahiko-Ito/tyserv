@@ -4,6 +4,14 @@ DEF_TYSERV_DIR=/home/tyserv/tyserv
 DEF_TYSERV_RUNDIR=/home/tyserv/rundir1
 TYSERV_RUNDIR=${DEF_TYSERV_RUNDIR}
 #
+# for Linux etc
+#
+TAC=/usr/bin/tac
+#
+# for FreeBSD etc
+#
+#TAC=${DEF_TYSERV_DIR}/bin/tac.sh
+#
 if [ X"$1" = "X-h" -o X"$1" = "X--help" ]
 then
     echo "usage : `basename $0` [-d tyserv_rundir] [-s|--stdin] [-v|--verbose]"
@@ -54,8 +62,6 @@ if [ "X${VERBOSE_SW}" != "X" ]
 then
     echo "tyrollback start. rollback jounal=(${RBJ}), run directory=(${TYSERV_RUNDIR})."
 fi
-#
-TAC=/usr/bin/tac
 #
 if [ -x ${TAC} ]
 then

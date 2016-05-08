@@ -28,8 +28,8 @@ while ($line = <STDIN>){
 /* DataBase definition */
 #include "typhoondb.h"
 
-extern FILE *Fp_rvj;
-extern FILE *Fp_rbj;
+extern int  Fd_rvj;
+extern int  Fd_rbj;
 extern int  Rvj_sw;
 extern int  Rbj_sw;
 extern char In_buf[];
@@ -294,18 +294,10 @@ printf("    switch (sts = d_fillnew(%-s, &%-s)){\n", $upper_rec, $rec[0]);
 @src = <<__EOF__;
     case S_OKAY:
         if (Rvj_sw == 1){
-#if 0
-            fprintf(Fp_rvj, "%-s", In_buf_rvj);
-#else
-            fputs(In_buf_rvj, Fp_rvj);
-#endif
+            write(Fd_rvj, In_buf_rvj, strlen(In_buf_rvj));
         }
         if (Rbj_sw == 1){
-#if 0
-            fprintf(Fp_rbj, "%-s", Out_buf_rbj);
-#else
-            fputs(Out_buf_rbj, Fp_rbj);
-#endif
+            write(Fd_rbj, Out_buf_rbj, strlen(Out_buf_rbj));
         }
         sprintf(Out_buf, "%-s\\t%-s\\n", "OK", "INSERTED");
         break;
@@ -465,18 +457,10 @@ printf("        switch (sts = d_recwrite(&%-s)){\n", $rec[0]);
 @src = <<__EOF__;
         case S_OKAY:
             if (Rvj_sw == 1){
-#if 0
-                fprintf(Fp_rvj, "%-s", In_buf_rvj);
-#else
-                fputs(In_buf_rvj, Fp_rvj);
-#endif
+                write(Fd_rvj, In_buf_rvj, strlen(In_buf_rvj));
             }
             if (Rbj_sw == 1){
-#if 0
-                fprintf(Fp_rbj, "%-s", Out_buf_rbj);
-#else
-                fputs(Out_buf_rbj, Fp_rbj);
-#endif
+                write(Fd_rbj, Out_buf_rbj, strlen(Out_buf_rbj));
             }
             sprintf(Out_buf, "%-s\\t%-s\\n", "OK", "UPDATED");
             break;
@@ -586,18 +570,10 @@ printf("        sprintf(Out_buf_rbj, \"%-s\\n\", Out_buf_rbj);\n", "%-s");
     switch (sts){
     case S_OKAY:
         if (Rvj_sw == 1){
-#if 0
-            fprintf(Fp_rvj, "%-s", In_buf_rvj);
-#else
-            fputs(In_buf_rvj, Fp_rvj);
-#endif
+            write(Fd_rvj, In_buf_rvj, strlen(In_buf_rvj));
         }
         if (Rbj_sw == 1){
-#if 0
-            fprintf(Fp_rbj, "%-s", Out_buf_rbj);
-#else
-            fputs(Out_buf_rbj, Fp_rbj);
-#endif
+            write(Fd_rbj, Out_buf_rbj, strlen(Out_buf_rbj));
         }
         sprintf(Out_buf, "%-s\\t%-s\\n", "OK", "DELETED");
         break;

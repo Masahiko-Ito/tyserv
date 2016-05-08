@@ -1,4 +1,4 @@
-tyserv-2.1 -- database server which use typhoon RDBMS as database engine
+tyserv-2.2 -- database server which use typhoon RDBMS as database engine
 Copyright (C) 2003  Masahiko Ito
 
 These programs is free software; you can redistribute it and/or modify
@@ -59,12 +59,16 @@ C-ISAM」等の言葉に反応してしまうそこのあなたにこそ「tyserv」は有るの
 ダウンロード
 ============
 
-http://myh.no-ip.org/~tyserv/tyserv-2.1.tar.gz
+http://myh.no-ip.org/~tyserv/tyserv-2.2.tar.gz
 
-  1. 排他制御の粒度を細かくするためのマルチサーバ構成に対応
-  2. tysearch(検索コマンド)サポート
-  3. tyrecover.sh, tyrollback.sh オプション変更
-  4. tyserv, tyrecover, tysearch バッファオーバフロー修正
+  1. Cygwin 1.3.12 対応
+  2. FreeBSD 4.7-RELEASE 対応
+  3. ジャーナル出力を fputs から write に変更
+  4. 起動スクリプト rc.tyserv のオプション変更
+  5. ジャーナル(リカバリ,ロールバック)の出力件数制限を
+     tyserv.confで行うように機能追加
+  6. kill -HUP で tyserv.conf をリロードするように修正(対象
+     パラメータは TABLE_LIST,RVJ_SW,SAFER_SW,RVJ_MAX,RBJ_MAX,DEBUG).
 
 インストール
 ============
@@ -72,11 +76,11 @@ http://myh.no-ip.org/~tyserv/tyserv-2.1.tar.gz
  1. システムにユーザ tyserv を追加する
  2. ユーザ tyserv 用にホームディレクトリ /home/tyserv を作成する
  3. tyserv でログインする
- 4. tyserv-2.1 を展開する
-     □ $ tar xvzf tyserv-2.1.tar.gz
-     □ $ ln -s tyserv-2.1/typhoon .
-     □ $ ln -s tyserv-2.1/tyserv .
-     □ $ ln -s tyserv-2.1/rundir1 .
+ 4. tyserv-2.2 を展開する
+     □ $ tar xvzf tyserv-2.2.tar.gz
+     □ $ cp -fr tyserv-2.2/typhoon .
+     □ $ cp -fr tyserv-2.2/tyserv .
+     □ $ cp -fr tyserv-2.2/rundir1 .
  5. PATH に ${HOME}/typhoon/bin, ${HOME}/tyserv/bin を追加する
         ex. (/home/tyserv/.profile etc)
      □ PATH="${PATH}:${HOME}/typhoon/bin"
@@ -87,7 +91,7 @@ http://myh.no-ip.org/~tyserv/tyserv-2.1.tar.gz
      □ typhoon-1.11.0.tar.gz を取得する
         http://users.footprints.net/~kaz/typhoon.html
      □ $ tar xvzf typhoon-1.11.0.tar.gz
-     □ $ cd typhoon-1.11.0; patch -p1 <../tyserv-2.1/
+     □ $ cd typhoon-1.11.0; patch -p1 <../tyserv-2.2/
         typhoon-1.11.0.patch
      □ $ ./configure; make
      □ $ su
@@ -174,15 +178,29 @@ http://myh.no-ip.org/~tyserv/tyserv-2.1.tar.gz
  ・ SAFER_SW=1
     安全モードの設定(1:設定する 1以外:設定しない)
      □ 安全モード設定時
-        ジャーナル出力直後に fsync 実行
+        ジャーナル出力を syncモード で実行
         更新スピードは遅くなるが、ジャーナル記録の確実性が高い
      □ 安全モード非設定時
-        ジャーナル出力直後に fsync 実行無し
+        ジャーナル出力を 非syncモード で実行
         ジャーナル記録の確実性は低いが、更新スピードが速い
         UPS等の利用が望ましい
     通常は「1」が望ましいが、UPSが利用できたり、ノートパソコンで稼働
-    させたりで、不意の電源断等が回避できている状況なら「0」でいいかも
-    。
+    させたりで、不意の電源断等が回避できている状況なら「0」でいいかも。
+ ・ RBJ_MAX=10000
+    １回のトランザクションでのロールバックジャーナル出力件数の最大値
+    を指定する。ロールバックジャーナル出力件数がこの指定件数を越える
+    とそれ以降の更新処理は COMMIT,ROLLBACK,END_TRAN,ABORT_TRAN が実行
+    されるまで失敗する。
+ ・ RVJ_MAX=1000000
+    サーバ起動中のリカバリジャーナル出力件数の最大値を指定する。
+    リカバリジャーナル出力件数がこの指定件数を越えるとそれ以降の更新
+    処理はサーバを再起動するまで失敗する。また、ロールバック処理中に
+    リカバリジャーナル出力件数がこの指定件数を越えるとサーバはロール
+    バックを放棄してクラッシュする。
+    RVJ_MAX は RBJ_MAX に比べて十分大きな値にすることが望ましい。
+
+    RVJ_MAX, RBJ_MAX は設計ミス、バグ等によりジャーナルがディスク領域
+    を食い潰す事を回避するために導入したパラメータです。
  ・ DEBUG=0
     デバッグモード(1:設定する 1以外:設定しない)
     (特に変える必要は無いでしょう)
@@ -418,7 +436,11 @@ exit 0;
 ├──┼─────────────────────────┤
 │NG  │NOTFOUND                                          │
 ├──┼─────────────────────────┤
+│NG  │RECOVERY JOURNAL OVERFLOW                         │
+├──┼─────────────────────────┤
 │NG  │REQUIRE START_TRAN OR START_TRAN_NJ OR START_TRANM│
+├──┼─────────────────────────┤
+│NG  │ROLLBACK JOURNAL OVERFLOW                         │
 ├──┼─────────────────────────┤
 │NG  │SOCKET READ ERROR                                 │
 ├──┼─────────────────────────┤
@@ -595,18 +617,21 @@ tyserv 再生成
 起動スクリプト(rc.tyserv)
 =========================
 
- ・ usage : rc.tyserv [-w] [-d 実行時ディレクトリ]
+ ・ usage : rc.tyserv [-w|-c] [-d 実行時ディレクトリ]
      □ -w : warm起動をします。
-         ☆ リカバリジャーナル(実行時ディレクトリ/journal/rvj.dat)は
-            起動時点の内容に追加出力されます。
+         ☆ ロールバックジャーナル(実行時ディレクトリ/journal/
+            rbj.dat) が存在する場合は起動を中断します。
+     □ -c : cold起動をします。
+         ☆ 起動時点のロールバックジャーナルの内容は破棄され、ロール
+            バックは行われません。
+         ☆ 起動時点のリカバリジャーナルの内容は破棄され、先頭から書
+            き出されます。
+     □ -w, -c 指定無し : デフォルト
          ☆ ロールバックジャーナル(実行時ディレクトリ/journal/
             rbj.dat) が存在する場合は自動的にロールバック処理が実行さ
             れます。
-     □ -w 無し : cold起動をします。
-         ☆ 起動時点のリカバリジャーナルの内容は破棄され、先頭から書
-            き出されます。
-         ☆ 起動時点のロールバックジャーナルの内容は破棄され、ロール
-            バックは行われません。
+         ☆ リカバリジャーナル(実行時ディレクトリ/journal/rvj.dat)は
+            起動時点の内容に追加出力されます。
      □ -d 実行時ディレクトリ : 省略時は /home/tyserv/rundir1
 
 サーバは自動的にバックグラウンドで実行されます。
@@ -701,7 +726,7 @@ tyservは排他の単位がデータベースなので、排他モードのトランザクション
 ることで共有そのものを避ける方法で排他制御を行っている(というか行わず
 にすましてるというか...)為にしかたのないことです(^^;。
 
-そこでtyserv-2.1ではデータベースに含まれるテーブルを幾つかのグループ
+そこでtyserv-2.2ではデータベースに含まれるテーブルを幾つかのグループ
 に分けて、そのグループ毎に別々のサーバを起動することで排他の粒度を細
 かくできるように拡張を行いました。
 
@@ -754,7 +779,7 @@ tyservは排他の単位がデータベースなので、排他モードのトランザクション
      □ ty_rollbacks(@tran_param)
  ・ サンプルスクリプトの動かし方
      □ $ cd /home/tyserv
-     □ $ ln -s tyserv-2.1/rundir2 .
+     □ $ cp -fr tyserv-2.2/rundir2 .
      □ $ /etc/rc.d/rc.tyserv -d /home/tyserv/rundir2
      □ $ cd /home/tyserv/tyserv/sample
      □ $ ./sample3.pl localhost 20000 update 20001 update
@@ -779,6 +804,27 @@ OK      FOUND   id=0003 name=Kiyoshi Sakamoto   salary=0510000
 OK      FOUND   id=0004 name=Masaharu Sawada    salary=0470000
 OK      FOUND   id=0005 name=Masahiko Ito       salary=0300000
 $
+
+Cygwin 対応
+===========
+
+typhoon-1.11.0.patch の代わりに typhoon-1.11.0.cygwin.patch を利用する
+事でMS-Windows上のCygwin環境でtyservを利用することが出来ます。
+その際には、tyservのmakeにはMakefile.cygwinを利用して下さい。
+また、本パッチを当てることでtyphoon-1.11.0が本来持ってる排他制御機能は
+無効になるので注意して下さい。
+
+特に、既にtyphoon-1.11.0を利用したアプリケーションを作成されてる場合は
+本パッチの利用は避けられたほうが良いでしょう。
+
+FreeBSD 対応
+============
+
+typhoon-1.11.0.patch の代わりに typhoon-1.11.0.FreeBSD.patch を利用する
+事でFreeBSD環境でtyservを利用することが出来ます。その際には、tyservの
+Makefile中のLIBSマクロに -lcompat を追加してください。また、tacコマンド
+がインストールされていない場合は tyrollback.sh スクリプト中の TACシェル
+変数を tac.sh を使うように修正してください。
 
 TODO & BUGS
 ===========

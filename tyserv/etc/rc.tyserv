@@ -9,25 +9,29 @@
 
 if [ X"$1" = "X-h" -o X"$1" = "X--help" ]
 then
-    echo "usage : `basename $0` [-d tyserv_rundir] [-w]"
+    echo "usage : `basename $0` [-d tyserv_rundir] [-w|-c]"
     echo "  -d tyserv run diriectory"
     echo "  -w warm start"
+    echo "  -c cold start"
     exit 1
 fi
 
 DEF_TYSERV_DIR=/home/tyserv/tyserv
-DEF_TYSERV_RUNDIR=/home/tyserv/tyserv
+DEF_TYSERV_RUNDIR=/home/tyserv/rundir1
 ROLLBACKER=${DEF_TYSERV_DIR}/bin/tyrollback.sh
 SERVER=${DEF_TYSERV_DIR}/bin/tyserv
 
 TYSERV_RUNDIR=${DEF_TYSERV_RUNDIR}
-WARM_OPT=""
+EXEC_OPT=""
 
 while [ "$#" != "0" ]
 do
     case $1 in
     -w )
-        WARM_OPT=$1
+        EXEC_OPT=$1
+        ;;
+    -c )
+        EXEC_OPT=$1
         ;;
     -d )
         shift
@@ -37,21 +41,31 @@ do
     shift
 done
 
-[ -f $ROLLBACKER ] || exit 0
-[ -f $SERVER ] || exit 0
+[ -x $ROLLBACKER ] || exit 1
+[ -x $SERVER ] || exit 1
 
-if [ "X${WARM_OPT}" = "X-w" ]
+if [ "X${EXEC_OPT}" = "X-w" ]
 then
-    echo -n "Starting tyserv server(warm): "
+    echo "Starting tyserv server(warm)."
     if [ -s ${TYSERV_RUNDIR}/journal/rbj.dat ]
     then
-        echo -n "Starting tyserv rollback: "
-        $ROLLBACKER -d ${TYSERV_RUNDIR}
+        echo "rollback journal exist, stopped."
+        exit 1
     fi
 else
-    echo -n "Starting tyserv server(cold): "
-    /bin/rm -f ${TYSERV_RUNDIR}/journal/rbj.dat
-    /bin/rm -f ${TYSERV_RUNDIR}/journal/rvj.dat
+    if [ "X${EXEC_OPT}" = "X-c" ]
+    then
+        echo "Starting tyserv server(cold)."
+        /bin/rm -f ${TYSERV_RUNDIR}/journal/rbj.dat
+        /bin/rm -f ${TYSERV_RUNDIR}/journal/rvj.dat
+    else
+        echo "Starting tyserv server(default)."
+        if [ -s ${TYSERV_RUNDIR}/journal/rbj.dat ]
+        then
+            echo "Starting tyserv rollback."
+            $ROLLBACKER -d ${TYSERV_RUNDIR}
+        fi
+    fi
 fi
 
 $SERVER ${TYSERV_RUNDIR} &

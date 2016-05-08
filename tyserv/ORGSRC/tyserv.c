@@ -16,6 +16,8 @@
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <tcpd.h>
 #include <syslog.h>
@@ -45,6 +47,8 @@ int deny_severity = LOG_WARNING;
 #define DEF_TYSERV_RUNDIR  "/home/tyserv/rundir1"
 #define DEF_RVJ_SW (1)
 #define DEF_RBJ_SW (1)
+#define DEF_RVJ_MAX (1000000)
+#define DEF_RBJ_MAX (10000)
 #define DEF_SAFER_SW (1)
 #define DEF_DAEMON_NAME "tyserv"
 #define DEF_DEBUG (0)
@@ -63,11 +67,16 @@ char Tyserv_rundir[PATH_LEN];
 char Conf_file[PATH_LEN];
 int  Rvj_sw;
 int  Rbj_sw;
+int  Rvj_max;
+int  Rbj_max;
 int  Safer_sw;
 int  Debug;
 
-FILE *Fp_rvj;
-FILE *Fp_rbj;
+int  Rvj_cnt;
+int  Rbj_cnt;
+
+int  Fd_rvj;
+int  Fd_rbj;
 FILE *Fp_passwd;
 
 char Rollback_script[PATH_LEN];
@@ -86,6 +95,8 @@ int  Sigchld_cnt = 0;
 void  SigTrap();
 
 int  init_file();
+int  init_file_sig();
+int  init_file_sig_sw;
 
 int  sock_read();
 int  sock_write();
@@ -155,14 +166,20 @@ int main(argc, argv)
 /*
  * set initial environment 
  */
+#ifndef __CYGWIN__
     if ((fd = open("/dev/tty", O_RDWR)) >= 0){
         ioctl(fd, TIOCNOTTY, (char *)NULL);
         close(fd);
     }
+#endif
     chdir("/");
     umask(022);
     close(0);
     errno = 0;
+
+    init_file_sig_sw = 0;
+    Rvj_cnt = 0;
+    Rbj_cnt = 0;
 
 /*
  * set from initialze file
@@ -240,6 +257,13 @@ int main(argc, argv)
     }
 
     while (!IsShutdown(In_buf)){
+/*
+ * reload a part of init_file
+ */
+        if (init_file_sig_sw == 1){
+            init_file_sig();
+            init_file_sig_sw = 0;
+        }
 /*
  * wait terminated process
  */
@@ -361,29 +385,44 @@ int main(argc, argv)
                 Rbj_sw = 1;
             }
 
-            if (Debug > 0){
-                printf("Rbj_sw=(%d)\n", Rbj_sw);
-            }
-
 /*
  * open journals
  */
             if (Rvj_sw == 1){
-                if ((Fp_rvj = fopen(Rvj_name, "a")) == (FILE *)NULL){
-                    fprintf(stderr, "recovery journal(%-s) can't open, crashed\n", Rvj_name);
-                    exit(1);
+                if (Safer_sw == 1){
+                    if ((Fd_rvj = open(Rvj_name, O_WRONLY|O_APPEND|O_SYNC)) < 0){
+                        if ((Fd_rvj = open(Rvj_name, O_WRONLY|O_CREAT|O_SYNC, S_IRUSR|S_IWUSR)) < 0){
+                            fprintf(stderr, "recovery journal(%-s) can't open, crashed\n", Rvj_name);
+                            exit(1);
+                        }
+                    }
+                }else{
+                    if ((Fd_rvj = open(Rvj_name, O_WRONLY|O_APPEND)) < 0){
+                        if ((Fd_rvj = open(Rvj_name, O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR)) < 0){
+                            fprintf(stderr, "recovery journal(%-s) can't open, crashed\n", Rvj_name);
+                            exit(1);
+                        }
+                    }
                 }
             }else{
-                Fp_rvj = (FILE *)NULL;
+                Fd_rvj = -1;
             }
 
             if (Rbj_sw == 1){
-                if ((Fp_rbj = fopen(Rbj_name, "w")) == (FILE *)NULL){
-                    fprintf(stderr, "rollback journal(%-s) can't open, crashed\n", Rbj_name);
-                    exit(1);
+                if (Safer_sw == 1){
+                    if ((Fd_rbj = open(Rbj_name, O_WRONLY|O_CREAT|O_TRUNC|O_SYNC, S_IRUSR|S_IWUSR)) < 0){
+                        fprintf(stderr, "rollback journal(%-s) can't open, crashed\n", Rbj_name);
+                        exit(1);
+                    }
+                }else{
+                    if ((Fd_rbj = open(Rbj_name, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR)) < 0){
+                        fprintf(stderr, "rollback journal(%-s) can't open, crashed\n", Rbj_name);
+                        exit(1);
+                    }
                 }
+                Rbj_cnt = 0;
             }else{
-                Fp_rbj = (FILE *)NULL;
+                Fd_rbj = -1;
             }
 
 /* 
@@ -412,13 +451,21 @@ int main(argc, argv)
                 if (strcmp(FuncName, "ROLLBACK") == 0 ||
                     strcmp(FuncName, "rollback") == 0){
                     if (Rbj_sw == 1){
-                        fclose(Fp_rbj);
+                        close(Fd_rbj);
                         if (rollback() == 0){
                             sprintf(Out_buf, "%-s\t%-s\n", "OK", "ROLLBACKED");
-                            if ((Fp_rbj = fopen(Rbj_name, "w")) == (FILE *)NULL){
-                                fprintf(stderr, "rollback journal(%-s) can't truncate, crashed\n", Rbj_name);
-                                exit(1);
+                            if (Safer_sw == 1){
+                                if ((Fd_rbj = open(Rbj_name, O_WRONLY|O_CREAT|O_TRUNC|O_SYNC, S_IRUSR|S_IWUSR)) < 0){
+                                    fprintf(stderr, "rollback journal(%-s) can't truncate, crashed\n", Rbj_name);
+                                    exit(1);
+                                }
+                            }else{
+                                if ((Fd_rbj = open(Rbj_name, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR)) < 0){
+                                    fprintf(stderr, "rollback journal(%-s) can't truncate, crashed\n", Rbj_name);
+                                    exit(1);
+                                }
                             }
+                            Rbj_cnt = 0;
                         }else{
                             fprintf(stderr, "can't rollback, crashed\n");
                             exit(1);
@@ -429,14 +476,22 @@ int main(argc, argv)
                 }else if (strcmp(FuncName, "COMMIT") == 0 ||
                           strcmp(FuncName, "commit") == 0){
                     if (Rbj_sw == 1){
-                        fclose(Fp_rbj);
-                        if ((Fp_rbj = fopen(Rbj_name, "w")) == (FILE *)NULL){
-                            fprintf(stderr, "rollback journal(%-s) can't truncate, crashed\n", Rbj_name);
-                            exit(1);
+                        close(Fd_rbj);
+                        if (Safer_sw == 1){
+                            if ((Fd_rbj = open(Rbj_name, O_WRONLY|O_CREAT|O_TRUNC|O_SYNC, S_IRUSR|S_IWUSR)) < 0){
+                                fprintf(stderr, "rollback journal(%-s) can't truncate, crashed\n", Rbj_name);
+                                exit(1);
+                            }
+                        }else{
+                            if ((Fd_rbj = open(Rbj_name, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR)) < 0){
+                                fprintf(stderr, "rollback journal(%-s) can't truncate, crashed\n", Rbj_name);
+                                exit(1);
+                            }
                         }
+                        Rbj_cnt = 0;
                     }
                     if (Rvj_sw == 1){
-                        fputs(In_buf_rvj, Fp_rvj);
+                        write(Fd_rvj, In_buf_rvj, strlen(In_buf_rvj));
                     }
                     sprintf(Out_buf, "%-s\t%-s\n", "OK", "COMMITED");
                 }else{
@@ -447,13 +502,61 @@ int main(argc, argv)
                                 (*Tbl_rec[i].func_get)(In_buf);
                             }else if (strcmp(FuncName, "PUT") == 0 ||
                                       strcmp(FuncName, "put") == 0){
-                                (*Tbl_rec[i].func_put)(In_buf);
+                                if (Rvj_sw == 1 && Rvj_cnt >= Rvj_max){
+                                    sprintf(Out_buf, "%-s\t%-s\n", 
+                                            "NG", "RECOVERY JOURNAL OVERFLOW");
+                                }else if (Rbj_sw == 1 && Rbj_cnt >= Rbj_max){
+                                    sprintf(Out_buf, "%-s\t%-s\n", 
+                                            "NG", "ROLLBACK JOURNAL OVERFLOW");
+                                }else{
+                                    (*Tbl_rec[i].func_put)(In_buf);
+                                    if (strncmp(Out_buf, "OK", strlen("OK")) == 0){
+                                        if (Rvj_sw == 1){
+                                            Rvj_cnt++;
+                                        }
+                                        if (Rbj_sw == 1){
+                                            Rbj_cnt++;
+                                        }
+                                    }
+                                }
                             }else if (strcmp(FuncName, "UPDATE") == 0 ||
                                       strcmp(FuncName, "update") == 0){
-                                (*Tbl_rec[i].func_update)(In_buf);
+                                if (Rvj_sw == 1 && Rvj_cnt >= Rvj_max){
+                                    sprintf(Out_buf, "%-s\t%-s\n", 
+                                            "NG", "RECOVERY JOURNAL OVERFLOW");
+                                }else if (Rbj_sw == 1 && Rbj_cnt >= Rbj_max){
+                                    sprintf(Out_buf, "%-s\t%-s\n", 
+                                            "NG", "ROLLBACK JOURNAL OVERFLOW");
+                                }else{
+                                    (*Tbl_rec[i].func_update)(In_buf);
+                                    if (strncmp(Out_buf, "OK", strlen("OK")) == 0){
+                                        if (Rvj_sw == 1){
+                                            Rvj_cnt++;
+                                        }
+                                        if (Rbj_sw == 1){
+                                            Rbj_cnt++;
+                                        }
+                                    }
+                                }
                             }else if (strcmp(FuncName, "DELETE") == 0 ||
                                       strcmp(FuncName, "delete") == 0){
-                                (*Tbl_rec[i].func_delete)(In_buf);
+                                if (Rvj_sw == 1 && Rvj_cnt >= Rvj_max){
+                                    sprintf(Out_buf, "%-s\t%-s\n", 
+                                            "NG", "RECOVERY JOURNAL OVERFLOW");
+                                }else if (Rbj_sw == 1 && Rbj_cnt >= Rbj_max){
+                                    sprintf(Out_buf, "%-s\t%-s\n", 
+                                            "NG", "ROLLBACK JOURNAL OVERFLOW");
+                                }else{
+                                    (*Tbl_rec[i].func_delete)(In_buf);
+                                    if (strncmp(Out_buf, "OK", strlen("OK")) == 0){
+                                        if (Rvj_sw == 1){
+                                            Rvj_cnt++;
+                                        }
+                                        if (Rbj_sw == 1){
+                                            Rbj_cnt++;
+                                        }
+                                    }
+                                }
                             }else if (strcmp(FuncName, "GETNEXT") == 0 ||
                                       strcmp(FuncName, "getnext") == 0){
                                 (*Tbl_rec[i].func_getnext)(In_buf);
@@ -471,17 +574,6 @@ int main(argc, argv)
 
                 sock_write(S_sock, Out_buf, strlen(Out_buf));
 
-                if (Safer_sw == 1){
-                    if (Rvj_sw == 1){
-                        fflush(Fp_rvj);
-                        fsync(fileno(Fp_rvj));
-                    }
-                    if (Rbj_sw == 1){
-                        fflush(Fp_rbj);
-                        fsync(fileno(Fp_rbj));
-                    }
-                }
-
 /*
  * wait db access command or "end_tran"
  */
@@ -493,7 +585,7 @@ int main(argc, argv)
                 if (strncmp(In_buf, "end_tran", strlen("end_tran")) == 0 ||
                     strncmp(In_buf, "END_TRAN", strlen("END_TRAN")) == 0){
                     if (Rvj_sw == 1){
-                        fputs(In_buf, Fp_rvj);
+                        write(Fd_rvj, In_buf, strlen(In_buf));
                     }
                 }
             }
@@ -502,10 +594,10 @@ int main(argc, argv)
  */
             DB_close();
             if (Rvj_sw == 1){
-                fclose(Fp_rvj);
+                close(Fd_rvj);
             }
             if (Rbj_sw == 1){
-                fclose(Fp_rbj);
+                close(Fd_rbj);
             }
 
             if (ret > 0){
@@ -584,17 +676,11 @@ int main(argc, argv)
 /*
  * wait termination of other ALL process befor shutdown
  */
-    if (Debug == 1){
-        fprintf(stderr, "wait termination of children\n");
-    }
     errno = 0;
     ret = wait(&status);
     while (ret > 0 || errno == EINTR){
         errno = 0;
         ret = wait(&status);
-    }
-    if (Debug == 1){
-        fprintf(stderr, "all children terminated\n");
     }
 
     sock_write(S_sock, Out_buf, strlen(Out_buf));
@@ -616,6 +702,7 @@ void  SigTrap(sig)
 
     switch (sig){
     case SIGHUP:
+        init_file_sig_sw = 1;
         signal(sig,  SigTrap);
         break;
     case SIGCHLD:
@@ -919,6 +1006,8 @@ int  init_file()
     Table_list[0] = '\0';
     Rvj_sw = DEF_RVJ_SW;
     Safer_sw = DEF_SAFER_SW;
+    Rvj_max = DEF_RVJ_MAX;
+    Rbj_max = DEF_RBJ_MAX;
     Debug = DEF_DEBUG;
 
     strncpy(Conf_file, Tyserv_rundir, (sizeof Conf_file) - 1);
@@ -962,6 +1051,10 @@ int  init_file()
             Rvj_sw = atoi(buf + strlen("RVJ_SW="));
         }else if(strncmp(buf, "SAFER_SW=", strlen("SAFER_SW=")) == 0){
             Safer_sw = atoi(buf + strlen("SAFER_SW="));
+        }else if(strncmp(buf, "RVJ_MAX=", strlen("RVJ_MAX=")) == 0){
+            Rvj_max = atoi(buf + strlen("RVJ_MAX="));
+        }else if(strncmp(buf, "RBJ_MAX=", strlen("RBJ_MAX=")) == 0){
+            Rbj_max = atoi(buf + strlen("RBJ_MAX="));
         }else if(strncmp(buf, "DEBUG=", strlen("DEBUG=")) == 0){
             Debug = atoi(buf + strlen("DEBUG="));
         }
@@ -987,6 +1080,61 @@ int  init_file()
         printf("Table_list=(%-s)\n", Table_list);
         printf("Rvj_sw=(%d)\n", Rvj_sw);
         printf("Safer_sw=(%d)\n", Safer_sw);
+        printf("Rvj_max=(%d)\n", Rvj_max);
+        printf("Rbj_max=(%d)\n", Rbj_max);
+        printf("Debug=(%d)\n", Debug);
+    }
+
+    return 0;
+}
+
+int  init_file_sig()
+{
+    FILE *fp;
+    char buf[BUF_LEN];
+
+    Table_list[0] = '\0';
+
+    if ((fp = fopen(Conf_file, "r")) == (FILE *)NULL){
+        fprintf(stderr, "can not open initfile(%-s), crashed\n", Conf_file);
+        exit(1);
+    }
+
+    while (fgets(buf, sizeof buf, fp) != (char *)NULL){
+        if (strchr(buf, '\n') != (char *)NULL){
+            *(strchr(buf, '\n')) = '\0';
+        }
+        if (buf[0] == '#'){
+            buf[0] = '\0';
+        }
+        if(strncmp(buf, "TABLE_LIST=", strlen("TABLE_LIST=")) == 0){
+            strncat(Table_list, "\t", (sizeof Table_list) - 1);
+            strncat(Table_list, buf + strlen("TABLE_LIST="), (sizeof Table_list) - strlen(Table_list) - 1);
+        }else if(strncmp(buf, "RVJ_SW=", strlen("RVJ_SW=")) == 0){
+            Rvj_sw = atoi(buf + strlen("RVJ_SW="));
+        }else if(strncmp(buf, "SAFER_SW=", strlen("SAFER_SW=")) == 0){
+            Safer_sw = atoi(buf + strlen("SAFER_SW="));
+        }else if(strncmp(buf, "RVJ_MAX=", strlen("RVJ_MAX=")) == 0){
+            Rvj_max = atoi(buf + strlen("RVJ_MAX="));
+        }else if(strncmp(buf, "RBJ_MAX=", strlen("RBJ_MAX=")) == 0){
+            Rbj_max = atoi(buf + strlen("RBJ_MAX="));
+        }else if(strncmp(buf, "DEBUG=", strlen("DEBUG=")) == 0){
+            Debug = atoi(buf + strlen("DEBUG="));
+        }
+    }
+
+    if (Table_list[0] != '\0'){
+        strncat(Table_list, "\t", (sizeof Table_list) - strlen(Table_list) - 1);
+    }
+
+    fclose(fp);
+
+    if (Debug > 0){
+        printf("Table_list=(%-s)\n", Table_list);
+        printf("Rvj_sw=(%d)\n", Rvj_sw);
+        printf("Safer_sw=(%d)\n", Safer_sw);
+        printf("Rvj_max=(%d)\n", Rvj_max);
+        printf("Rbj_max=(%d)\n", Rbj_max);
         printf("Debug=(%d)\n", Debug);
     }
 
@@ -995,11 +1143,17 @@ int  init_file()
 
 int  rollback()
 {
-    int  status, pid, wpid;
+    int  status, pid, wpid, remain_rvj_cnt;
 
 #if 0
     fprintf(stderr, "rollback start\n");
 #endif
+
+    remain_rvj_cnt = Rvj_max - Rvj_cnt;
+    if (Rbj_cnt > remain_rvj_cnt){
+        fprintf(stderr, "rollback failure, recovery journal no space : ");
+        return -1;
+    }
 
     if ((pid = fork()) == 0){
         execl(Rollback_script, "tyrollback", "-d", Tyserv_rundir, (char *)NULL);
@@ -1033,6 +1187,8 @@ int  rollback()
 #if 0
             fprintf(stderr, "rollback success\n");
 #endif
+            Rvj_cnt += Rbj_cnt;
+
             return 0;
         }else{
 #if 0

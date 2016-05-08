@@ -12,6 +12,8 @@
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <ctype.h>
 #include <typhoon.h>
@@ -41,8 +43,8 @@ int  Rbj_sw;
 int  Safer_sw;
 int  Debug;
 
-FILE *Fp_rvj;
-FILE *Fp_rbj;
+int  Fd_rvj;
+int  Fd_rbj;
 
 char Tmp_buf[BUF_LEN];
 char In_buf[BUF_LEN];
@@ -130,15 +132,17 @@ int main(argc, argv)
  * open journals
  */
     if (Rvj_sw == 1){
-        if ((Fp_rvj = fopen(Rvj_name, "a")) == (FILE *)NULL){
-            fprintf(stderr, "recovery journal(%-s) can't open\n", Rvj_name);
-            exit(1);
+        if ((Fd_rvj = open(Rvj_name, O_WRONLY|O_APPEND|O_SYNC)) < 0){
+            if ((Fd_rvj = open(Rvj_name, O_WRONLY|O_CREAT|O_SYNC, S_IRUSR|S_IWUSR)) < 0){
+                fprintf(stderr, "recovery journal(%-s) can't open\n", Rvj_name);
+                exit(1);
+            }
         }
     }else{
-        Fp_rvj = (FILE *)NULL;
+        Fd_rvj = -1;
     }
 
-    Fp_rbj = (FILE *)NULL;
+    Fd_rbj = -1;
 
 /*
  * data base open
@@ -187,15 +191,11 @@ int main(argc, argv)
         if (strncmp(Out_buf, "NG", strlen("NG")) == 0){
             fprintf(stderr, Out_buf);
             Ok_sw = 0;
-        }else{
-            if (Debug == 1){
-                fprintf(stderr, Out_buf);
-            }
         }
     }
 
     if (Rvj_sw == 1){
-        fclose(Fp_rvj);
+        close(Fd_rvj);
     }
     DB_close();
     if (Ok_sw == 1){

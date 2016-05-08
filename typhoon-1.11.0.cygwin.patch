@@ -1,0 +1,740 @@
+diff -cr typhoon-1.11.0.ORG/Makefile typhoon-1.11.0/Makefile
+*** typhoon-1.11.0.ORG/Makefile	Sat Oct  2 12:37:32 1999
+--- typhoon-1.11.0/Makefile	Thu Feb 13 11:11:18 2003
+***************
+*** 4,11 ****
+  PREFIX		= /usr/local
+  DESTMAN		= $(PREFIX)/man/man$(MANEXT)
+  DESTCAT		= $(PREFIX)/man/cat$(MANEXT)
+! DESTOWN		= root
+! DESTGRP		= local
+  SHELL		= /bin/sh
+  MAKE		= make
+  
+--- 4,13 ----
+  PREFIX		= /usr/local
+  DESTMAN		= $(PREFIX)/man/man$(MANEXT)
+  DESTCAT		= $(PREFIX)/man/cat$(MANEXT)
+! #DESTOWN		= root
+! DESTOWN		= Administrator
+! #DESTGRP		= local
+! DESTGRP		= Administrators
+  SHELL		= /bin/sh
+  MAKE		= make
+  
+diff -cr typhoon-1.11.0.ORG/configure typhoon-1.11.0/configure
+*** typhoon-1.11.0.ORG/configure	Mon Oct  4 13:44:22 1999
+--- typhoon-1.11.0/configure	Thu Feb 13 11:11:19 2003
+***************
+*** 30,36 ****
+  compile='$CC $CARGS -o conftest conftest.c >/dev/null 2>&1'
+  compiled_ok='test -s conftest && (./conftest) >/dev/null 2>/dev/null;'
+  
+! DEFS=''	# additional -D compiler defines go here
+  ENVIRON_H=./include/environ.h
+  ANSI_H=./include/ansi.h
+  
+--- 30,36 ----
+  compile='$CC $CARGS -o conftest conftest.c >/dev/null 2>&1'
+  compiled_ok='test -s conftest && (./conftest) >/dev/null 2>/dev/null;'
+  
+! DEFS='-DEXTEND'	# additional -D compiler defines go here
+  ENVIRON_H=./include/environ.h
+  ANSI_H=./include/ansi.h
+  
+Only in typhoon-1.11.0/examples: Makefile
+diff -cr typhoon-1.11.0.ORG/examples/Makefile.in typhoon-1.11.0/examples/Makefile.in
+*** typhoon-1.11.0.ORG/examples/Makefile.in	Mon Oct  4 08:28:28 1999
+--- typhoon-1.11.0/examples/Makefile.in	Thu Feb 13 11:11:19 2003
+***************
+*** 7,16 ****
+  PREFIX		= /usr/local
+  LDFLAGS		= -L../src
+  DESTBIN		= $(PREFIX)/bin
+! DESTOWN		= root
+! DESTGRP		= local
+  SHELL		= /bin/sh
+! PROGRAM		= demo
+  SRCS		= demo.c
+  HDRS		= demo.h
+  OBJS		= demo.o
+--- 7,18 ----
+  PREFIX		= /usr/local
+  LDFLAGS		= -L../src
+  DESTBIN		= $(PREFIX)/bin
+! #DESTOWN		= root
+! DESTOWN		= Administrator
+! #DESTGRP		= local
+! DESTGRP		= Administrators
+  SHELL		= /bin/sh
+! PROGRAM		= demo.exe
+  SRCS		= demo.c
+  HDRS		= demo.h
+  OBJS		= demo.o
+***************
+*** 35,40 ****
+--- 37,43 ----
+  		ctags -w $(HDRS) $(SRCS)
+  
+  install:	$(PROGRAM)
++ 		-mkdir $(DESTBIN)
+  		cp $(PROGRAM) $(DESTBIN)
+  		-mcs -c $(DESTBIN)/$(PROGRAM)
+  		strip $(DESTBIN)/$(PROGRAM)
+Only in typhoon-1.11.0/include: ansi.h
+Only in typhoon-1.11.0/include: environ.h
+diff -cr typhoon-1.11.0.ORG/man/Makefile typhoon-1.11.0/man/Makefile
+*** typhoon-1.11.0.ORG/man/Makefile	Sat Oct  2 12:38:13 1999
+--- typhoon-1.11.0/man/Makefile	Thu Feb 13 11:11:19 2003
+***************
+*** 6,13 ****
+  PREFIX		= /usr/local
+  DESTMAN		= $(PREFIX)/man/man$(MANEXT)
+  DESTCAT		= $(PREFIX)/man/cat$(MANEXT)
+! DESTOWN		= root
+! DESTGRP		= local
+  SHELL		= /bin/sh
+  MANPAGES	= d_close.3 d_crget.3 d_crread.3 d_crset.3 d_dbdpath.3 \
+  		  d_dbfpath.3 d_dbget.3 d_dbset.3 d_delete.3 d_fillnew.3 \
+--- 6,15 ----
+  PREFIX		= /usr/local
+  DESTMAN		= $(PREFIX)/man/man$(MANEXT)
+  DESTCAT		= $(PREFIX)/man/cat$(MANEXT)
+! #DESTOWN		= root
+! DESTOWN		= Administrator
+! #DESTGRP		= local
+! DESTGRP		= Everyone
+  SHELL		= /bin/sh
+  MANPAGES	= d_close.3 d_crget.3 d_crread.3 d_crset.3 d_dbdpath.3 \
+  		  d_dbfpath.3 d_dbget.3 d_dbset.3 d_delete.3 d_fillnew.3 \
+***************
+*** 38,55 ****
+  $(CATPAGES):	$(MANPAGES)
+  
+  install:	$(CATPAGES)
+! 		-for manpage in $(MANPAGES); do \
+! 			basepage=`expr $$manpage : '\(.*\)\.[^.]*'`; \
+! :			cp $$manpage $(DESTMAN)/$$basepage.$(MANEXT); \
+! :			chmod 644 $(DESTMAN)/$$basepage.$(MANEXT); \
+! :			chown $(DESTOWN) $(DESTMAN)/$$basepage.$(MANEXT); \
+! :			chgrp $(DESTGRP) $(DESTMAN)/$$basepage.$(MANEXT); \
+! 			compress -c $$basepage.cat \
+! 				>$(DESTCAT)/$$basepage.$(MANEXT).Z; \
+! 			chmod 644 $(DESTCAT)/$$basepage.$(MANEXT)*; \
+! 			chown $(DESTOWN) $(DESTCAT)/$$basepage.$(MANEXT)*; \
+! 			chgrp $(DESTGRP) $(DESTCAT)/$$basepage.$(MANEXT)*; \
+! 		done
+  
+  uninstall:
+  		-for manpage in $(MANPAGES); do \
+--- 40,62 ----
+  $(CATPAGES):	$(MANPAGES)
+  
+  install:	$(CATPAGES)
+! #		-for manpage in $(MANPAGES); do \
+! #			basepage=`expr $$manpage : '\(.*\)\.[^.]*'`; \
+! #:			cp $$manpage $(DESTMAN)/$$basepage.$(MANEXT); \
+! #:			chmod 644 $(DESTMAN)/$$basepage.$(MANEXT); \
+! #:			chown $(DESTOWN) $(DESTMAN)/$$basepage.$(MANEXT); \
+! #:			chgrp $(DESTGRP) $(DESTMAN)/$$basepage.$(MANEXT); \
+! #			compress -c $$basepage.cat \
+! #				>$(DESTCAT)/$$basepage.$(MANEXT).Z; \
+! #			chmod 644 $(DESTCAT)/$$basepage.$(MANEXT)*; \
+! #			chown $(DESTOWN) $(DESTCAT)/$$basepage.$(MANEXT)*; \
+! #			chgrp $(DESTGRP) $(DESTCAT)/$$basepage.$(MANEXT)*; \
+! #		done
+! 	-mkdir $(PREFIX)/man
+! 	-mkdir $(PREFIX)/man/man3
+! 	-mkdir $(PREFIX)/man/man1
+! 	cp d_*.3 $(PREFIX)/man/man3/
+! 	cp ddlp.1 $(PREFIX)/man/man1/
+  
+  uninstall:
+  		-for manpage in $(MANPAGES); do \
+Only in typhoon-1.11.0/src: Makefile
+diff -cr typhoon-1.11.0.ORG/src/Makefile.in typhoon-1.11.0/src/Makefile.in
+*** typhoon-1.11.0.ORG/src/Makefile.in	Mon Oct  4 08:28:28 1999
+--- typhoon-1.11.0/src/Makefile.in	Thu Feb 13 11:11:19 2003
+***************
+*** 7,14 ****
+  PREFIX		= /usr/local
+  DESTLIB		= $(PREFIX)/lib
+  DESTHDR		= $(PREFIX)/include
+! DESTOWN		= root
+! DESTGRP		= local
+  SHELL		= /bin/sh
+  LIBRARY		= libtyphoon.a
+  LIBHDRS		= ../include/environ.h ../include/typhoon.h
+--- 7,16 ----
+  PREFIX		= /usr/local
+  DESTLIB		= $(PREFIX)/lib
+  DESTHDR		= $(PREFIX)/include
+! #DESTOWN		= root
+! DESTOWN		= Administrator
+! #DESTGRP		= local
+! DESTGRP		= Administrators
+  SHELL		= /bin/sh
+  LIBRARY		= libtyphoon.a
+  LIBHDRS		= ../include/environ.h ../include/typhoon.h
+***************
+*** 50,60 ****
+--- 52,64 ----
+  		ctags -w $(HDRS) $(SRCS)
+  
+  install:	$(LIBRARY)
++ 		-mkdir $(DESTLIB)
+  		cp $(LIBRARY) $(DESTLIB)
+  		-ranlib $(DESTLIB)/$(LIBRARY)
+  		chmod 644 $(DESTLIB)/$(LIBRARY)
+  		chown $(DESTOWN) $(DESTLIB)/$(LIBRARY)
+  		chgrp $(DESTGRP) $(DESTLIB)/$(LIBRARY)
++ 		-mkdir $(DESTHDR)
+  		cp $(LIBHDRS) $(DESTHDR)
+  		cd $(DESTHDR) && chmod 644 $(LIBHDRS)
+  		cd $(DESTHDR) && chown $(DESTOWN) $(LIBHDRS)
+diff -cr typhoon-1.11.0.ORG/src/os.c typhoon-1.11.0/src/os.c
+*** typhoon-1.11.0.ORG/src/os.c	Mon Oct  4 12:45:07 1999
+--- typhoon-1.11.0/src/os.c	Thu Feb 13 11:11:19 2003
+***************
+*** 94,99 ****
+--- 94,100 ----
+      	return -1;
+  #	endif
+  #endif
++ #ifndef __CYGWIN__
+  #ifdef CONFIG_UNIX
+  #ifdef CONFIG_USE_FLOCK
+      flk.l_type = F_WRLCK;
+***************
+*** 108,113 ****
+--- 109,115 ----
+  		puts("lockf failed");
+  #endif
+  #endif
++ #endif
+  #ifdef CONFIG_OS2
+  #	ifdef __BORLANDC__
+      if( locking(fh, type == 't' ? LK_NBLCK : LK_LOCK, bytes) == -1 )
+***************
+*** 145,153 ****
+--- 147,157 ----
+  	return locking(fh, LK_UNLCK, bytes);
+  #	endif
+  #endif
++ #ifndef __CYGWIN__
+  #ifdef CONFIG_UNIX
+  	return lockf(fh, F_ULOCK, bytes);
+  #endif
++ #endif
+  #ifdef CONFIG_OS2
+  #	ifdef __BORLANDC__
+      return locking(fh, LK_UNLCK, bytes);
+diff -cr typhoon-1.11.0.ORG/src/ty_log.c typhoon-1.11.0/src/ty_log.c
+*** typhoon-1.11.0.ORG/src/ty_log.c	Mon Oct  4 12:45:08 1999
+--- typhoon-1.11.0/src/ty_log.c	Thu Feb 13 11:31:24 2003
+***************
+*** 70,75 ****
+--- 70,76 ----
+  static int do_log(recid, recno)
+  ulong recid, recno;
+  {
++ #ifndef __CYGWIN__
+  	if( !DB->shm->backup_active && !log_trans )
+  	{
+  		if( log_fh != -1 )
+***************
+*** 93,98 ****
+--- 94,100 ----
+  			return -1;
+  		}
+  	}
++ #endif
+  	
+  	return 0;
+  }
+***************
+*** 116,121 ****
+--- 118,124 ----
+  unsigned size;
+  void *data;
+  {
++ #ifndef __CYGWIN__
+  	LogUpdate update;
+  
+  	if( do_log(recid, recno) == -1 )
+***************
+*** 137,142 ****
+--- 140,146 ----
+  	write(log_fh, data, size);
+  
+  	os_unlock(log_fh, 0, 1);
++ #endif
+  
+  	return 0;
+  }
+***************
+*** 145,150 ****
+--- 149,155 ----
+  int log_delete(recid, recno)
+  ulong recid, recno;
+  {
++ #ifndef __CYGWIN__
+  	LogDelete delete;
+  
+  	if( do_log(recid, recno) == -1 )
+***************
+*** 160,165 ****
+--- 165,171 ----
+  	write(log_fh, &delete, sizeof delete);
+  
+  	os_unlock(log_fh, 0, 1);
++ #endif
+  
+  	return 0;
+  }
+***************
+*** 178,188 ****
+--- 184,196 ----
+   */
+  FNCLASS int d_beginwork()
+  {
++ #ifndef __CYGWIN__
+  	if( DB->shm->backup_active )
+  	{
+  		DB->shm->num_trans_active++;
+  		log_trans = 1;		
+  	}
++ #endif
+  
+  	return S_OKAY;
+  }
+***************
+*** 190,200 ****
+--- 198,210 ----
+  
+  FNCLASS int d_commitwork()
+  {
++ #ifndef __CYGWIN__
+  	if( log_trans )
+  	{
+  		log_trans = 0;
+  		DB->shm->num_trans_active--;
+  	}
++ #endif
+  
+  	return S_OKAY;
+  }
+***************
+*** 204,214 ****
+--- 214,226 ----
+  
+  FNCLASS int d_abortwork()
+  {
++ #ifndef __CYGWIN__
+  	if( log_trans )
+  	{
+  		log_trans =0 ;
+  		DB->shm->num_trans_active--;
+  	}		
++ #endif
+  
+  	return S_OKAY;
+  }
+Only in typhoon-1.11.0/src: ty_log.c.bak
+diff -cr typhoon-1.11.0.ORG/src/ty_open.c typhoon-1.11.0/src/ty_open.c
+*** typhoon-1.11.0.ORG/src/ty_open.c	Mon Oct  4 12:45:08 1999
+--- typhoon-1.11.0/src/ty_open.c	Thu Feb 13 11:29:32 2003
+***************
+*** 404,409 ****
+--- 404,410 ----
+  		RETURN S_NOMEM;
+  	}
+  
++ #ifndef __CYGWIN__
+  #ifdef CONFIG_UNIX
+  	if( shm_alloc(DB) == -1 )
+  	{
+***************
+*** 423,428 ****
+--- 424,430 ----
+  		RETURN S_NOTAVAIL;
+  	}
+  #endif
++ #endif
+  
+  	DB->recbuf = DB->real_recbuf;
+      DB->clients++;
+***************
+*** 471,479 ****
+--- 473,483 ----
+  
+  		DB->clients--;
+  		CURR_DB = -1;
++ #ifndef __CYGWIN__
+  #ifdef CONFIG_UNIX
+  		shm_free(DB);
+  #endif
++ #endif
+  		free(DB->real_recbuf);
+  		free(DB->dbd);
+  		seq_close(DB);
+***************
+*** 532,541 ****
+--- 536,547 ----
+  	/* If there is currently a transaction active the transaction counter
+  	 * in shared memory must be decremented.
+  	 */
++ #ifndef __CYGWIN__
+  #ifdef CONFIG_UNIX
+  	d_abortwork();
+  	shm_free(DB);
+  #endif
++ #endif
+  	FREE(DB->dbd);
+  	FREE(DB->real_recbuf);
+  
+Only in typhoon-1.11.0/src: ty_open.c.bak
+diff -cr typhoon-1.11.0.ORG/src/unix.c typhoon-1.11.0/src/unix.c
+*** typhoon-1.11.0.ORG/src/unix.c	Mon Oct  4 13:39:42 1999
+--- typhoon-1.11.0/src/unix.c	Thu Feb 13 12:15:28 2003
+***************
+*** 41,49 ****
+--- 41,51 ----
+  
+  #include <sys/types.h>
+  #include <sys/stat.h>
++ #ifndef __CYGWIN__
+  #include <sys/ipc.h>
+  #include <sys/sem.h>
+  #include <sys/shm.h>
++ #endif
+  #include <unistd.h>
+  #include <fcntl.h>
+  #include <stdio.h>
+***************
+*** 92,97 ****
+--- 94,100 ----
+  
+  int ty_openlock()
+  {
++ #ifndef __CYGWIN__
+  #ifndef SEMLOCK
+  	static char lockfname[] = "/tmp/typhoonsem";
+  	int pid = getpid();
+***************
+*** 112,125 ****
+--- 115,131 ----
+  	umask(old_umask);
+  
+  #endif
++ #endif
+  	return 0;
+  }
+  
+  
+  int ty_closelock()
+  {
++ #ifndef __CYGWIN__
+  	close(lock_fh);
+  	lock_fh = -1;
++ #endif
+  
+  	return 0;
+  }
+***************
+*** 127,132 ****
+--- 133,139 ----
+  
+  void ty_lock()
+  {
++ #ifndef __CYGWIN__
+  #ifdef CONFIG_USE_FLOCK
+  	struct flock flk;
+  #endif
+***************
+*** 152,158 ****
+  
+      while (fcntl(lock_fh, F_SETLK, &flk) == -1)
+  	{
+! 		if (errno != EINTR)
+  		{
+  			printf("ty_lock failed (errno %d, lock_fh %d)\n", errno, lock_fh);
+  			break;
+--- 159,165 ----
+  
+      while (fcntl(lock_fh, F_SETLK, &flk) == -1)
+  	{
+! 		if (errno != EINTR && errno != EAGAIN )
+  		{
+  			printf("ty_lock failed (errno %d, lock_fh %d)\n", errno, lock_fh);
+  			break;
+***************
+*** 171,181 ****
+--- 178,190 ----
+  #endif
+  
+  #endif
++ #endif
+  }
+  
+  
+  int ty_unlock()
+  {
++ #ifndef __CYGWIN__
+  #ifdef SEMLOCK
+  #if 1
+  	while( semop(sem_id, sem_clear_buf, 1) == -1 && errno == EINTR )
+***************
+*** 198,203 ****
+--- 207,213 ----
+  		}
+  	}
+  #endif
++ #endif
+  
+  
+  	return 0;
+***************
+*** 209,214 ****
+--- 219,225 ----
+  int shm_alloc(db)
+  Dbentry *db;
+  {
++ #ifndef __CYGWIN__
+  	char dbdname[128];
+  	key_t key;
+  	long flags = IPC_CREAT|0770;
+***************
+*** 256,261 ****
+--- 267,273 ----
+  	if( created )
+  		memset(db->shm, 0, sizeof *db->shm);
+  	db->shm->use_count++;
++ #endif
+  
+  	return 0;
+  }
+***************
+*** 264,269 ****
+--- 276,282 ----
+  int shm_free(db)
+  Dbentry *db;
+  {
++ #ifndef __CYGWIN__
+  	if( --db->shm->use_count == 0 )
+  	{
+  		shmdt((char *)db->shm);
+***************
+*** 277,282 ****
+--- 290,296 ----
+  #if 0
+  	sem_close(sem_id);
+  #endif
++ #endif
+  	return 0;
+  }
+  
+Only in typhoon-1.11.0/src: unix.c.bak
+Only in typhoon-1.11.0/util: Makefile
+diff -cr typhoon-1.11.0.ORG/util/Makefile.in typhoon-1.11.0/util/Makefile.in
+*** typhoon-1.11.0.ORG/util/Makefile.in	Mon Oct  4 08:28:29 1999
+--- typhoon-1.11.0/util/Makefile.in	Thu Feb 13 11:11:19 2003
+***************
+*** 9,18 ****
+  PREFIX		= /usr/local
+  LDFLAGS		= -L../src
+  DESTBIN		= $(PREFIX)/bin
+! DESTOWN		= root
+! DESTGRP		= local
+  SHELL		= /bin/sh
+  PROGRAMS	= ddlp dbdview tyexport tyimport # tybackup tyrestore
+  MADESRCS	= ddl.c exp.c imp.c ddl.h exp.h imp.h
+  SRCS		= backup.c dbdview.c ddl.y ddlp.c ddlplex.c ddlpsym.c exp.y \
+  		  export.c exportlx.c expspec.c fixlog.c imp.y import.c \
+--- 9,21 ----
+  PREFIX		= /usr/local
+  LDFLAGS		= -L../src
+  DESTBIN		= $(PREFIX)/bin
+! #DESTOWN		= root
+! DESTOWN		= Administrator
+! #DESTGRP		= local
+! DESTGRP		= Administrators
+  SHELL		= /bin/sh
+  PROGRAMS	= ddlp dbdview tyexport tyimport # tybackup tyrestore
++ PROGRAMSEXE	= ddlp.exe dbdview.exe tyexport.exe tyimport.exe # tybackup.exe tyrestore.exe
+  MADESRCS	= ddl.c exp.c imp.c ddl.h exp.h imp.h
+  SRCS		= backup.c dbdview.c ddl.y ddlp.c ddlplex.c ddlpsym.c exp.y \
+  		  export.c exportlx.c expspec.c fixlog.c imp.y import.c \
+***************
+*** 70,82 ****
+  tags:		$(HDRS) $(SRCS)
+  		ctags -w $(HDRS) $(SRCS)
+  
+! install:	$(PROGRAMS)
+! 		cp $(PROGRAMS) $(DESTBIN)
+! 		cd $(DESTBIN) && -mcs -c $(PROGRAMS)
+! 		cd $(DESTBIN) && strip $(PROGRAMS)
+! 		cd $(DESTBIN) && chmod 755 $(PROGRAMS)
+! 		cd $(DESTBIN) && chown $(DESTOWN) $(PROGRAMS)
+! 		cd $(DESTBIN) && chgrp $(DESTGRP) $(PROGRAMS)
+  
+  uninstall:
+  		cd $(DESTBIN) && rm -f $(PROGRAMS)
+--- 73,86 ----
+  tags:		$(HDRS) $(SRCS)
+  		ctags -w $(HDRS) $(SRCS)
+  
+! install:	$(PROGRAMSEXE)
+! 		-mkdir $(DESTBIN)
+! 		cp $(PROGRAMSEXE) $(DESTBIN)
+! #		cd $(DESTBIN) && -mcs -c $(PROGRAMSEXE)
+! 		cd $(DESTBIN) && strip $(PROGRAMSEXE)
+! 		cd $(DESTBIN) && chmod 755 $(PROGRAMSEXE)
+! 		cd $(DESTBIN) && chown $(DESTOWN) $(PROGRAMSEXE)
+! 		cd $(DESTBIN) && chgrp $(DESTGRP) $(PROGRAMSEXE)
+  
+  uninstall:
+  		cd $(DESTBIN) && rm -f $(PROGRAMS)
+Only in typhoon-1.11.0/util: dbdview.exe
+Only in typhoon-1.11.0/util: ddlp.exe
+diff -cr typhoon-1.11.0.ORG/util/export.c typhoon-1.11.0/util/export.c
+*** typhoon-1.11.0.ORG/util/export.c	Mon Oct  4 13:11:31 1999
+--- typhoon-1.11.0/util/export.c	Thu Feb 13 11:11:19 2003
+***************
+*** 74,85 ****
+--- 74,99 ----
+  FILE *lex_file;
+  
+  /*------------------------------ local variables ---------------------------*/
++ #ifdef EXTEND
+  static char paramhelp[] = "\
+  Syntax: tyexport [option]... database[.dbd]\n\
+  Options:\n\
++     -s          export to stdout (extension by M.Ito)\n\
+      -f<path>    Specify data files path\n\
+      -g          Generate export specification\n\
+      -n          Strings are not null-terminated\n";
++ #else
++ static char paramhelp[] = "\
++ Syntax: tyexport [option]... database[.dbd]\n\
++ Options:\n\
++     -f<path>    Specify data files path\n\
++     -g          Generate export specification\n\
++     -n          Strings are not null-terminated\n";
++ #endif
++ 
++ #ifdef EXTEND
++ int OutfileIsStdout = 0;
++ #endif
+  
+  #ifdef CONFIG_PROTOTYPES
+  void err_quit(char *s, ...)
+***************
+*** 335,344 ****
+--- 349,369 ----
+  		{
+  			sprintf(export_fname, "%s.kom", dbd.record[i].name);
+  
++ #ifdef EXTEND
++ 			if (OutfileIsStdout == 1){
++ 				outfile = stdout;
++ 			}else{
++ 				if( !(outfile = fopen(export_fname, "w")) )
++ 					err_quit("Cannot write to '%s'", export_fname);
++ 
++ 				printf("exporting to '%s'\n", export_fname);
++ 			}
++ #else
+  		 	if( !(outfile = fopen(export_fname, "w")) )
+  				err_quit("Cannot write to '%s'", export_fname);
+  
+  			printf("exporting to '%s'\n", export_fname);
++ #endif
+  			ExportTable(i);
+  			fclose(outfile);
+  		}
+***************
+*** 398,403 ****
+--- 423,433 ----
+  		{
+  			switch( argv[i][1] )
+  			{
++ #ifdef EXTEND
++ 				case 's':
++ 					OutfileIsStdout = 1;
++ 					break;
++ #endif
+  				case 'f':
+  					d_dbfpath(argv[i]+2);
+  					break;
+diff -cr typhoon-1.11.0.ORG/util/import.c typhoon-1.11.0/util/import.c
+*** typhoon-1.11.0.ORG/util/import.c	Mon Oct  4 13:11:32 1999
+--- typhoon-1.11.0/util/import.c	Thu Feb 13 11:11:19 2003
+***************
+*** 79,89 ****
+--- 79,102 ----
+  static char		import_fname[256];
+  
+  /*------------------------------ local variables ---------------------------*/
++ #ifdef EXTEND
+  static char paramhelp[] = "\
+  Syntax: tyimport [option]... database[.dbd]\n\
+  Options:\n\
++     -s          import from stdin (extension by M.Ito)\n\
+      -f<path>    Specify data files path\n\
+      -g          Generate import specification\n";
++ #else
++ static char paramhelp[] = "\
++ Syntax: tyimport [option]... database[.dbd]\n\
++ Options:\n\
++     -f<path>    Specify data files path\n\
++     -g          Generate import specification\n";
++ #endif
++ 
++ #ifdef EXTEND
++ static int            InfileIsStdin = 0;
++ #endif
+  
+  #ifdef CONFIG_PROTOTYPES
+  void err_quit(char *s, ...)
+***************
+*** 498,507 ****
+--- 511,531 ----
+  			lineno = 1;
+  			sprintf(import_fname, "%s.kom", dbd.record[i].name);
+  
++ #ifdef EXTEND
++ 			if (InfileIsStdin == 1){
++ 				infile = stdin;
++ 			}else{
++ 				if( !(infile = fopen(import_fname, "r")) )
++ 					err_quit("Cannot open '%s'", import_fname);
++ 
++ 				printf("importing from '%s'\n", import_fname);
++ }
++ #else
+  			if( !(infile = fopen(import_fname, "r")) )
+  				err_quit("Cannot open '%s'", import_fname);
+  
+  			printf("importing from '%s'\n", import_fname);
++ #endif
+  			ImportTable(i);
+  			fclose(infile);
+  		}
+***************
+*** 568,573 ****
+--- 592,603 ----
+  				case 'g':
+  					GenerateImportSpec(realname);
+  					exit(1);
++ #ifdef EXTEND
++ 				case 's':
++ 					InfileIsStdin = 1;
++ 					break;
++ #endif
++ 
+  				default:
+  					err_quit("unknown command line option");
+  			}
+Only in typhoon-1.11.0/util: tyexport.exe
+Only in typhoon-1.11.0/util: tyimport.exe

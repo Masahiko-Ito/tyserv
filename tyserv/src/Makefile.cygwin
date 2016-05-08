@@ -31,12 +31,12 @@ tysearch:    $(COM_OBJ) $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(COM_OBJ) $(OBJS) $(LIBS)
 
 install:
-	cp tyserv $(INSTALL_DIR)/tyserv
-	chmod 4755 $(INSTALL_DIR)/tyserv
-	cp tyrecover $(INSTALL_DIR)/tyrecover
-	chmod 4755 $(INSTALL_DIR)/tyrecover
-	cp tysearch $(INSTALL_DIR)/tysearch
-	chmod 4755 $(INSTALL_DIR)/tysearch
+	cp tyserv.exe $(INSTALL_DIR)/tyserv.exe
+	chmod 4700 $(INSTALL_DIR)/tyserv.exe
+	cp tyrecover.exe $(INSTALL_DIR)/tyrecover.exe
+	chmod 4700 $(INSTALL_DIR)/tyrecover.exe
+	cp tysearch.exe $(INSTALL_DIR)/tysearch.exe
+	chmod 4700 $(INSTALL_DIR)/tysearch.exe
 
 src:
 	$(INSTALL_DIR)/mktyserv all

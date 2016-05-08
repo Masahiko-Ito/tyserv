@@ -1,6 +1,6 @@
-diff -c -r ../typhoon-1.11.0.ORG/Makefile ./Makefile
-*** ../typhoon-1.11.0.ORG/Makefile	Sat Oct  2 12:37:32 1999
---- ./Makefile	Tue Mar  7 14:50:57 2000
+diff -cr typhoon-1.11.0.ORG/Makefile typhoon-1.11.0/Makefile
+*** typhoon-1.11.0.ORG/Makefile	Sat Oct  2 12:37:32 1999
+--- typhoon-1.11.0/Makefile	Thu Feb 20 12:10:05 2003
 ***************
 *** 5,11 ****
   DESTMAN		= $(PREFIX)/man/man$(MANEXT)
@@ -19,10 +19,10 @@ diff -c -r ../typhoon-1.11.0.ORG/Makefile ./Makefile
   SHELL		= /bin/sh
   MAKE		= make
   
-Only in .: Makefile.orig
-diff -c -r ../typhoon-1.11.0.ORG/configure ./configure
-*** ../typhoon-1.11.0.ORG/configure	Mon Oct  4 13:44:22 1999
---- ./configure	Tue Mar  7 15:51:54 2000
+Only in typhoon-1.11.0: Makefile.orig
+diff -cr typhoon-1.11.0.ORG/configure typhoon-1.11.0/configure
+*** typhoon-1.11.0.ORG/configure	Mon Oct  4 13:44:22 1999
+--- typhoon-1.11.0/configure	Thu Feb 20 12:29:24 2003
 ***************
 *** 15,21 ****
   # typhoon uses a mixture of POSIX, BSD and System V interfaces
@@ -54,15 +54,15 @@ diff -c -r ../typhoon-1.11.0.ORG/configure ./configure
   compile='$CC $CARGS -o conftest conftest.c >/dev/null 2>&1'
   compiled_ok='test -s conftest && (./conftest) >/dev/null 2>/dev/null;'
   
-! DEFS='-DEXTEND -DFREEBSD'	# additional -D compiler defines go here
+! DEFS='-DEXTEND'	# additional -D compiler defines go here
   ENVIRON_H=./include/environ.h
   ANSI_H=./include/ansi.h
   
-Only in .: configure.orig
-Only in .: data
-diff -c -r ../typhoon-1.11.0.ORG/examples/Makefile.in ./examples/Makefile.in
-*** ../typhoon-1.11.0.ORG/examples/Makefile.in	Mon Oct  4 08:28:28 1999
---- ./examples/Makefile.in	Tue Mar  7 17:00:54 2000
+Only in typhoon-1.11.0: configure.orig
+Only in typhoon-1.11.0/examples: Makefile
+diff -cr typhoon-1.11.0.ORG/examples/Makefile.in typhoon-1.11.0/examples/Makefile.in
+*** typhoon-1.11.0.ORG/examples/Makefile.in	Mon Oct  4 08:28:28 1999
+--- typhoon-1.11.0/examples/Makefile.in	Thu Feb 20 12:10:06 2003
 ***************
 *** 3,14 ****
   DEFINES		= -I../include @defs@
@@ -91,10 +91,16 @@ diff -c -r ../typhoon-1.11.0.ORG/examples/Makefile.in ./examples/Makefile.in
   SHELL		= /bin/sh
   PROGRAM		= demo
   SRCS		= demo.c
-Only in ./examples: Makefile.in.orig
-diff -c -r ../typhoon-1.11.0.ORG/man/Makefile ./man/Makefile
-*** ../typhoon-1.11.0.ORG/man/Makefile	Sat Oct  2 12:38:13 1999
---- ./man/Makefile	Tue Mar  7 14:50:58 2000
+Only in typhoon-1.11.0/examples: Makefile.in.orig
+Only in typhoon-1.11.0/examples: demo
+Only in typhoon-1.11.0/examples: demo.dbd
+Only in typhoon-1.11.0/examples: demo.h
+Only in typhoon-1.11.0/examples: demo.o
+Only in typhoon-1.11.0/include: ansi.h
+Only in typhoon-1.11.0/include: environ.h
+diff -cr typhoon-1.11.0.ORG/man/Makefile typhoon-1.11.0/man/Makefile
+*** typhoon-1.11.0.ORG/man/Makefile	Sat Oct  2 12:38:13 1999
+--- typhoon-1.11.0/man/Makefile	Thu Feb 20 12:10:06 2003
 ***************
 *** 7,13 ****
   DESTMAN		= $(PREFIX)/man/man$(MANEXT)
@@ -154,10 +160,11 @@ diff -c -r ../typhoon-1.11.0.ORG/man/Makefile ./man/Makefile
   
   uninstall:
   		-for manpage in $(MANPAGES); do \
-Only in ./man: Makefile.orig
-diff -c -r ../typhoon-1.11.0.ORG/src/Makefile.in ./src/Makefile.in
-*** ../typhoon-1.11.0.ORG/src/Makefile.in	Mon Oct  4 08:28:28 1999
---- ./src/Makefile.in	Tue Mar  7 17:01:04 2000
+Only in typhoon-1.11.0/man: Makefile.orig
+Only in typhoon-1.11.0/src: Makefile
+diff -cr typhoon-1.11.0.ORG/src/Makefile.in typhoon-1.11.0/src/Makefile.in
+*** typhoon-1.11.0.ORG/src/Makefile.in	Mon Oct  4 08:28:28 1999
+--- typhoon-1.11.0/src/Makefile.in	Thu Feb 20 12:10:06 2003
 ***************
 *** 8,14 ****
   DESTLIB		= $(PREFIX)/lib
@@ -176,10 +183,17 @@ diff -c -r ../typhoon-1.11.0.ORG/src/Makefile.in ./src/Makefile.in
   SHELL		= /bin/sh
   LIBRARY		= libtyphoon.a
   LIBHDRS		= ../include/environ.h ../include/typhoon.h
-Only in ./src: Makefile.in.orig
-diff -c -r ../typhoon-1.11.0.ORG/src/os.c ./src/os.c
-*** ../typhoon-1.11.0.ORG/src/os.c	Mon Oct  4 12:45:07 1999
---- ./src/os.c	Tue Mar  7 15:33:34 2000
+Only in typhoon-1.11.0/src: Makefile.in.orig
+Only in typhoon-1.11.0/src: ansi.o
+Only in typhoon-1.11.0/src: bt_del.o
+Only in typhoon-1.11.0/src: bt_funcs.o
+Only in typhoon-1.11.0/src: bt_io.o
+Only in typhoon-1.11.0/src: bt_open.o
+Only in typhoon-1.11.0/src: cmpfuncs.o
+Only in typhoon-1.11.0/src: libtyphoon.a
+diff -cr typhoon-1.11.0.ORG/src/os.c typhoon-1.11.0/src/os.c
+*** typhoon-1.11.0.ORG/src/os.c	Mon Oct  4 12:45:07 1999
+--- typhoon-1.11.0/src/os.c	Thu Feb 20 12:10:06 2003
 ***************
 *** 35,40 ****
 --- 35,41 ----
@@ -221,9 +235,40 @@ diff -c -r ../typhoon-1.11.0.ORG/src/os.c ./src/os.c
   #endif
   #ifdef CONFIG_OS2
   #	ifdef __BORLANDC__
-diff -c -r ../typhoon-1.11.0.ORG/src/unix.c ./src/unix.c
-*** ../typhoon-1.11.0.ORG/src/unix.c	Mon Oct  4 13:39:42 1999
---- ./src/unix.c	Tue Mar  7 15:39:50 2000
+Only in typhoon-1.11.0/src: os.c.orig
+Only in typhoon-1.11.0/src: os.o
+Only in typhoon-1.11.0/src: readdbd.o
+Only in typhoon-1.11.0/src: record.o
+Only in typhoon-1.11.0/src: sequence.o
+Only in typhoon-1.11.0/src: ty_auxfn.o
+Only in typhoon-1.11.0/src: ty_find.o
+Only in typhoon-1.11.0/src: ty_ins.o
+Only in typhoon-1.11.0/src: ty_io.o
+Only in typhoon-1.11.0/src: ty_log.o
+Only in typhoon-1.11.0/src: ty_open.o
+Only in typhoon-1.11.0/src: ty_refin.o
+Only in typhoon-1.11.0/src: ty_repl.o
+Only in typhoon-1.11.0/src: ty_util.o
+diff -cr typhoon-1.11.0.ORG/src/unix.c typhoon-1.11.0/src/unix.c
+*** typhoon-1.11.0.ORG/src/unix.c	Mon Oct  4 13:39:42 1999
+--- typhoon-1.11.0/src/unix.c	Thu Feb 20 12:26:31 2003
+***************
+*** 152,158 ****
+  
+      while (fcntl(lock_fh, F_SETLK, &flk) == -1)
+  	{
+! 		if (errno != EINTR)
+  		{
+  			printf("ty_lock failed (errno %d, lock_fh %d)\n", errno, lock_fh);
+  			break;
+--- 152,158 ----
+  
+      while (fcntl(lock_fh, F_SETLK, &flk) == -1)
+  	{
+! 		if( errno != EINTR && errno != EAGAIN )
+  		{
+  			printf("ty_lock failed (errno %d, lock_fh %d)\n", errno, lock_fh);
+  			break;
 ***************
 *** 187,195 ****
 --- 187,208 ----
@@ -249,9 +294,13 @@ diff -c -r ../typhoon-1.11.0.ORG/src/unix.c ./src/unix.c
   	{
   		if( errno != EINTR && errno != EAGAIN )
   		{
-diff -c -r ../typhoon-1.11.0.ORG/util/Makefile.in ./util/Makefile.in
-*** ../typhoon-1.11.0.ORG/util/Makefile.in	Mon Oct  4 08:28:29 1999
---- ./util/Makefile.in	Tue Mar  7 17:01:22 2000
+Only in typhoon-1.11.0/src: unix.c.orig
+Only in typhoon-1.11.0/src: unix.o
+Only in typhoon-1.11.0/src: vlr.o
+Only in typhoon-1.11.0/util: Makefile
+diff -cr typhoon-1.11.0.ORG/util/Makefile.in typhoon-1.11.0/util/Makefile.in
+*** typhoon-1.11.0.ORG/util/Makefile.in	Mon Oct  4 08:28:29 1999
+--- typhoon-1.11.0/util/Makefile.in	Thu Feb 20 12:10:07 2003
 ***************
 *** 5,16 ****
   YFLAGS		= -d
@@ -297,10 +346,22 @@ diff -c -r ../typhoon-1.11.0.ORG/util/Makefile.in ./util/Makefile.in
   		cd $(DESTBIN) && strip $(PROGRAMS)
   		cd $(DESTBIN) && chmod 755 $(PROGRAMS)
   		cd $(DESTBIN) && chown $(DESTOWN) $(PROGRAMS)
-Only in ./util: Makefile.in.orig
-diff -c -r ../typhoon-1.11.0.ORG/util/export.c ./util/export.c
-*** ../typhoon-1.11.0.ORG/util/export.c	Mon Oct  4 13:11:31 1999
---- ./util/export.c	Tue Mar  7 14:50:58 2000
+Only in typhoon-1.11.0/util: Makefile.in.orig
+Only in typhoon-1.11.0/util: dbdview
+Only in typhoon-1.11.0/util: dbdview.o
+Only in typhoon-1.11.0/util: ddl.c
+Only in typhoon-1.11.0/util: ddl.h
+Only in typhoon-1.11.0/util: ddl.o
+Only in typhoon-1.11.0/util: ddlp
+Only in typhoon-1.11.0/util: ddlp.o
+Only in typhoon-1.11.0/util: ddlplex.o
+Only in typhoon-1.11.0/util: ddlpsym.o
+Only in typhoon-1.11.0/util: exp.c
+Only in typhoon-1.11.0/util: exp.h
+Only in typhoon-1.11.0/util: exp.o
+diff -cr typhoon-1.11.0.ORG/util/export.c typhoon-1.11.0/util/export.c
+*** typhoon-1.11.0.ORG/util/export.c	Mon Oct  4 13:11:31 1999
+--- typhoon-1.11.0/util/export.c	Thu Feb 20 12:10:07 2003
 ***************
 *** 74,85 ****
 --- 74,99 ----
@@ -368,10 +429,16 @@ diff -c -r ../typhoon-1.11.0.ORG/util/export.c ./util/export.c
   				case 'f':
   					d_dbfpath(argv[i]+2);
   					break;
-Only in ./util: export.c.orig
-diff -c -r ../typhoon-1.11.0.ORG/util/import.c ./util/import.c
-*** ../typhoon-1.11.0.ORG/util/import.c	Mon Oct  4 13:11:32 1999
---- ./util/import.c	Tue Mar  7 14:50:58 2000
+Only in typhoon-1.11.0/util: export.c.orig
+Only in typhoon-1.11.0/util: export.o
+Only in typhoon-1.11.0/util: exportlx.o
+Only in typhoon-1.11.0/util: expspec.o
+Only in typhoon-1.11.0/util: imp.c
+Only in typhoon-1.11.0/util: imp.h
+Only in typhoon-1.11.0/util: imp.o
+diff -cr typhoon-1.11.0.ORG/util/import.c typhoon-1.11.0/util/import.c
+*** typhoon-1.11.0.ORG/util/import.c	Mon Oct  4 13:11:32 1999
+--- typhoon-1.11.0/util/import.c	Thu Feb 20 12:10:07 2003
 ***************
 *** 79,89 ****
 --- 79,102 ----
@@ -438,4 +505,9 @@ diff -c -r ../typhoon-1.11.0.ORG/util/import.c ./util/import.c
   				default:
   					err_quit("unknown command line option");
   			}
-Only in ./util: import.c.orig
+Only in typhoon-1.11.0/util: import.c.orig
+Only in typhoon-1.11.0/util: import.o
+Only in typhoon-1.11.0/util: importlx.o
+Only in typhoon-1.11.0/util: impspec.o
+Only in typhoon-1.11.0/util: tyexport
+Only in typhoon-1.11.0/util: tyimport
